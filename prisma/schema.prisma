@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Patient {
+  id            String         @id @default(uuid())
+  name          String
+  contactNumber String
+  aadharNumber  String         @unique
+  gender        Gender
+  email         String         @unique
+  dob           DateTime
+  password      String
+  address       String
+  prescriptions Prescription[]
+  appointments  Appointment[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("patients")
+}
+
+model Doctor {
+  id                   String         @id @default(uuid())
+  name                 String
+  contactNumber        String
+  gender               Gender
+  email                String         @unique
+  dob                  DateTime
+  password             String
+  address              String
+  avatar               String?
+  consultingFees       Int            @default(500)
+  specialization       String
+  affiliatedHospital   Hospital?      @relation(fields: [affiliatedHospitalId], references: [id])
+  affiliatedHospitalId String?
+  totalAppointments    Int            @default(0)
+  rating               Float          @default(0.0)
+  prescriptions        Prescription[]
+  appointments         Appointment[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@map("doctors")
+}
+
+model Prescription {
+  id                        String         @id @default(uuid())
+  patient                   Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId                 String
+  doctor                    Doctor         @relation(fields: [doctorId], references: [id])
+  doctorId                  String
+  date                      DateTime       @default(now())
+  medications               Medication[]
+  attachment                String?
+  instructionForOtherDoctor String?
+  medicationType            MedicationType @default(NORMAL)
+  status                    PrescriptionStatus         @default(ACTIVE)
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+
+  @@map("prescriptions")
+}
+
+model Medication {
+  id             String       @id @default(uuid())
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  prescriptionId String
+  medicine       String
+  dosage         String
+  instruction    String
+  numberOfDays   Int          @default(1)
+
+  @@map("medications")
+}
+
+model Hospital {
+  id            String   @id @default(uuid())
+  name          String
+  contactNumber String
+  email         String   @unique
+  password      String
+  address       String
+  latitude      Float
+  longitude     Float
+  doctors       Doctor[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("hospitals")
+}
+
+model Appointment {
+  id        String            @id @default(uuid())
+  patient   Patient           @relation(fields: [patientId], references: [id])
+  patientId String
+  doctor    Doctor            @relation(fields: [doctorId], references: [id])
+  doctorId  String
+  date      DateTime          @default(now())
+  reason    String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  status    AppointmentStatus @default(NORMAL)
+
+  // @@unique([patientId, doctorId], name: "appointent_unique_constraint")
+  @@map("appointments")
+}
+
+model Platform{
+  id        String   @id @default(uuid())
+  totalPrescriptions Int @default(0)
+  totalAppointments Int @default(0)
+
+  @@map("platforms")
+}
+
+
+// Enums used in the schema
+
+enum MedicationType {
+  NORMAL
+  IMPORTANT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum PrescriptionStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum AppointmentStatus {
+  NORMAL
+  EMERGENCY
+  CANCLED
+}
