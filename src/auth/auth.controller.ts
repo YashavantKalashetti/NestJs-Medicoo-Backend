@@ -10,8 +10,8 @@ export class AuthController {
 
     @HttpCode(HttpStatus.OK)
     @Post('patient/signin')
-    async patientSignin(@Res() res: Request, @Body() signinDto: SigninDto):Promise<{access_token: string}>{
-        return this.authService.patientSignin(res,signinDto);
+    async patientSignin(@Body() signinDto: SigninDto):Promise<{access_token: string}>{
+        return this.authService.patientSignin(signinDto);
     }
 
     @HttpCode(HttpStatus.CREATED)
@@ -24,7 +24,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Post('doctor/signin')
     async doctorSignin(@Res() res: Request,@Body() signinDto: SigninDto):Promise<{access_token: string}>{  
-        return this.authService.doctorSignin(res,signinDto);
+        return this.authService.doctorSignin(signinDto);
     }
 
     @HttpCode(HttpStatus.CREATED)
@@ -37,7 +37,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Post('hospital/signin')
     async hospitalSignin(@Res() res: Request, @Body() signinDto: SigninDto):Promise<{access_token: string}>{
-        return this.authService.hospitalSignin(res, signinDto);
+        return this.authService.hospitalSignin(signinDto);
     }   
 
     @HttpCode(HttpStatus.CREATED)

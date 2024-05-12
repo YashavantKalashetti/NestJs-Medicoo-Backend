@@ -19,7 +19,7 @@ export class AuthService {
 
     constructor(private prismaService: PrismaService, private config: ConfigService, private jwt: JwtService){}
 
-    async patientSignin(res : Request,signinDto: SigninDto):Promise<{access_token: string}>{
+    async patientSignin(signinDto: SigninDto):Promise<{access_token: string}>{
         const { email, password} = signinDto;
         const user = await this.prismaService.patient.findUnique({
             where:{ email }
@@ -35,7 +35,7 @@ export class AuthService {
 
         const { access_token } = await this.signToken(user.id, user.email, ROLES.PATIENT);
 
-        this.setCookie(res, access_token);
+        // this.setCookie(res, access_token);
         return {access_token};
     }
 
@@ -63,7 +63,7 @@ export class AuthService {
         }
     }
 
-    async doctorSignin(res: Request, signinDto: SigninDto):Promise<{access_token: string}>{
+    async doctorSignin(signinDto: SigninDto):Promise<{access_token: string}>{
         const { email, password} = signinDto;
         const user = await this.prismaService.doctor.findUnique({
             where:{ email }
@@ -78,7 +78,7 @@ export class AuthService {
         }
 
         const {access_token} = await this.signToken(user.id, user.email, ROLES.DOCTOR);
-        this.setCookie(res, access_token);
+        // this.setCookie(res, access_token);
         return {access_token};
         
     }
@@ -118,7 +118,7 @@ export class AuthService {
         }
     }   
 
-    async hospitalSignin(res: Request,signinDto: SigninDto):Promise<{access_token: string}>{
+    async hospitalSignin(signinDto: SigninDto):Promise<{access_token: string}>{
         const { email, password} = signinDto;
         const user = await this.prismaService.hospital.findUnique({
             where:{ email }
@@ -135,7 +135,7 @@ export class AuthService {
 
         const { access_token } = await this.signToken(user.id, user.email, ROLES.HOSPITAL);
 
-        this.setCookie(res, access_token);
+        // this.setCookie(res, access_token);
         return {access_token};
     }
 

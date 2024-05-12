@@ -9,7 +9,16 @@ import { ROLES } from "../auth.service";
 export class JwtStratergy extends PassportStrategy(Strategy, 'jwt'){
     constructor(config: ConfigService,private prisma: PrismaService){
         super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            jwtFromRequest: ExtractJwt.fromExtractors([
+                (req) => {
+                    let token = null;
+                    if (req && req.cookies) {
+                        token = req.cookies['access_token'];
+                    }
+                    return token;
+                },
+                ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ]),
             secretOrKey: config.get('JWT_SECRET')
         });
     }
