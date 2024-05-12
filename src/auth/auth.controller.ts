@@ -1,4 +1,4 @@
-import { Body, ClassSerializerInterceptor, Controller, HttpCode, HttpStatus, Post, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, HttpCode, HttpStatus, Post, Res, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SigninDto, PatientSignupDto, DoctorSignupDto, HospitalSignupDto } from '../dto';
 
@@ -10,8 +10,8 @@ export class AuthController {
 
     @HttpCode(HttpStatus.OK)
     @Post('patient/signin')
-    async patientSignin(@Body() signinDto: SigninDto):Promise<{access_token: string}>{
-        return this.authService.patientSignin(signinDto);
+    async patientSignin(@Res() res: Request, @Body() signinDto: SigninDto):Promise<{access_token: string}>{
+        return this.authService.patientSignin(res,signinDto);
     }
 
     @HttpCode(HttpStatus.CREATED)
@@ -23,8 +23,8 @@ export class AuthController {
 
     @HttpCode(HttpStatus.OK)
     @Post('doctor/signin')
-    async doctorSignin(@Body() signinDto: SigninDto):Promise<{access_token: string}>{  
-        return this.authService.doctorSignin(signinDto);
+    async doctorSignin(@Res() res: Request,@Body() signinDto: SigninDto):Promise<{access_token: string}>{  
+        return this.authService.doctorSignin(res,signinDto);
     }
 
     @HttpCode(HttpStatus.CREATED)
@@ -36,8 +36,8 @@ export class AuthController {
 
     @HttpCode(HttpStatus.OK)
     @Post('hospital/signin')
-    async hospitalSignin(@Body() signinDto: SigninDto):Promise<{access_token: string}>{
-        return this.authService.hospitalSignin(signinDto);
+    async hospitalSignin(@Res() res: Request, @Body() signinDto: SigninDto):Promise<{access_token: string}>{
+        return this.authService.hospitalSignin(res, signinDto);
     }   
 
     @HttpCode(HttpStatus.CREATED)

@@ -19,7 +19,7 @@ export class AuthService {
 
     constructor(private prismaService: PrismaService, private config: ConfigService, private jwt: JwtService){}
 
-    async patientSignin(signinDto: SigninDto):Promise<{access_token: string}>{
+    async patientSignin(res : Request,signinDto: SigninDto):Promise<{access_token: string}>{
         const { email, password} = signinDto;
         const user = await this.prismaService.patient.findUnique({
             where:{ email }
@@ -33,7 +33,10 @@ export class AuthService {
             throw new ForbiddenException('Incorrect credentials');
         }
 
-        return this.signToken(user.id, user.email, ROLES.PATIENT);
+        const { access_token } = await this.signToken(user.id, user.email, ROLES.PATIENT);
+
+        this.setCookie(res, access_token);
+        return {access_token};
     }
 
     async patientSignup(patientSignupDto: PatientSignupDto){
@@ -60,7 +63,7 @@ export class AuthService {
         }
     }
 
-    async doctorSignin(signinDto: SigninDto):Promise<{access_token: string}>{
+    async doctorSignin(res: Request, signinDto: SigninDto):Promise<{access_token: string}>{
         const { email, password} = signinDto;
         const user = await this.prismaService.doctor.findUnique({
             where:{ email }
@@ -74,7 +77,10 @@ export class AuthService {
             throw new ForbiddenException('Incorrect credentials');
         }
 
-        return this.signToken(user.id, user.email, ROLES.DOCTOR);
+        const {access_token} = await this.signToken(user.id, user.email, ROLES.DOCTOR);
+        this.setCookie(res, access_token);
+        return {access_token};
+        
     }
 
     async doctorSignup(doctorSignupDto: DoctorSignupDto){
@@ -112,7 +118,7 @@ export class AuthService {
         }
     }   
 
-    async hospitalSignin(signinDto: SigninDto):Promise<{access_token: string}>{
+    async hospitalSignin(res: Request,signinDto: SigninDto):Promise<{access_token: string}>{
         const { email, password} = signinDto;
         const user = await this.prismaService.hospital.findUnique({
             where:{ email }
@@ -126,7 +132,11 @@ export class AuthService {
             throw new ForbiddenException('Incorrect credentials');
         }
 
-        return this.signToken(user.id, user.email, ROLES.HOSPITAL);
+
+        const { access_token } = await this.signToken(user.id, user.email, ROLES.HOSPITAL);
+
+        this.setCookie(res, access_token);
+        return {access_token};
     }
 
     async hospitalSignup(hospitalSignupDto: HospitalSignupDto){
@@ -169,5 +179,12 @@ export class AuthService {
         return {access_token};
     }
 
+    async setCookie(res: any, token: string){
+        await res.cookie('access_token', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict'
+        });
+    }
 
 }
