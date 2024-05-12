@@ -45,11 +45,7 @@ export class CommonModuleService {
     async getHospitals(){
         const hospitals = await this.prismaService.hospital.findMany({
             include:{
-                _count:{
-                    select:{
-                        doctors:true
-                    }
-                }
+
             }
         });
 
@@ -67,49 +63,51 @@ export class CommonModuleService {
                 id
             },
             include:{
-                affiliatedHospital:{
+                affiliatedHospitals:{
                     select:{
+                        id:true,
                         name:true,
+                        contactNumber:true,
                         email:true,
                         address:true,
-                        contactNumber:true,
+                        latitude:true,
+                        longitude:true,
                     }
                 }
             }
         });
-
-        delete doctor.password;
 
         if (!doctor) {
             throw new BadRequestException('Doctor not found');
         }
 
+        delete doctor.password;
         return doctor;
     }
 
     async getHospitalById(id: string){
-        const hospital = await this.prismaService.hospital.findUnique({
-            where: {
+        const hospital = await this.prismaService.hospital.findMany({
+            where:{
                 id
             },
             include:{
-                doctors:{
+                registeredDoctors:{
                     select:{
+                        id:true,
                         name:true,
                         email:true,
                         contactNumber:true,
                         specialization:true,
                         rating:true,
+                        totalAppointments:true,
                     }
                 }
             }
-        });
+          });
 
         if (!hospital) {
             throw new BadRequestException('Hospital not found');
         }
-
-        delete hospital.password;
 
         return hospital;
     }

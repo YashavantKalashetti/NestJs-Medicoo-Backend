@@ -64,6 +64,7 @@ export class AuthService {
     }
 
     async doctorSignin(signinDto: SigninDto):Promise<{access_token: string}>{
+        console.log("Doctor Signin");
         const { email, password} = signinDto;
         const user = await this.prismaService.doctor.findUnique({
             where:{ email }
@@ -84,20 +85,8 @@ export class AuthService {
     }
 
     async doctorSignup(doctorSignupDto: DoctorSignupDto){
+        
         try {
-
-            const affiliatedHospital = doctorSignupDto.affiliatedHospitalId;
-
-            if(affiliatedHospital){
-                const hospital = await this.prismaService.hospital.findUnique({
-                    where:{ id: affiliatedHospital }
-                });
-    
-                if(!hospital){
-                    throw new ForbiddenException("Hospital not found. You have added a wrong hospital id. Please check and try again.");
-                }
-            }
-
             const hashedPassword = await argon2.hash(doctorSignupDto.password);
             const user = await this.prismaService.doctor.create({
                 data:{
@@ -107,6 +96,7 @@ export class AuthService {
             });
             delete user.password;
             return user;
+
         } catch (error) {
             if (error instanceof PrismaClientKnownRequestError) {
                 if (error.code === 'P2002') {

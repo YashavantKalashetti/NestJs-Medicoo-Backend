@@ -37,8 +37,4 @@ export class DoctorSignupDto{
     @IsNumber()
     @IsOptional()
     consultingFees: number;
-
-    @IsString()
-    @IsOptional()
-    affiliatedHospitalId:string;
 }

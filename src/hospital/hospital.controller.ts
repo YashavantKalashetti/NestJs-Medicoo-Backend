@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Hospital } from '@prisma/client';
 import { RolesGuard } from 'src/auth/JwtStrategy';
@@ -13,9 +13,20 @@ import { HospitalService } from './hospital.service';
 export class HospitalController {
     constructor(private hospitalService: HospitalService) {}
 
+    @Get('my-details')
+    async getMyHospitalDetails(@GetUser('id') hospitalId: string ){
+        return this.hospitalService.getMyHospitalDetails(hospitalId);
+    }
+
+
     @Get('/doctors')
-    async getDoctors(@GetUser() hospitalUser: Hospital ){
-        return this.hospitalService.getDoctors(hospitalUser);
+    async getDoctors(@GetUser('id') hospitalId: string ){
+        return this.hospitalService.getDoctors(hospitalId);
+    }
+
+
+    async addDoctorToHospital(@GetUser('id') hospitalId: string, @Body() body: {doctorId: string}){
+        return this.hospitalService.addDoctorToHospital(hospitalId, body);
     }
 
 }

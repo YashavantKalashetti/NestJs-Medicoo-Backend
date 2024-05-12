@@ -7,7 +7,34 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DoctorService {
     constructor(private prismaService: PrismaService) {}
 
-    async getAppointments(user: Doctor) {
+    async getMyDetails_Doctor(userId: string) {
+        const doctor = await this.prismaService.doctor.findUnique({
+            where: {
+                id: userId
+            },
+            include: {
+                affiliatedHospitals: {
+                    select: {
+                        name: true,
+                        address: true,
+                        contactNumber: true,
+                        email: true,
+                    }
+                }
+            },
+        });
+
+        const appointmentCount = await this.prismaService.appointment.count({
+            where: {
+                patientId: userId
+            }
+        });
+
+        delete doctor.password;
+        return {doctor,appointmentCount};
+    }
+
+    async getAppointments(userId: string) {
         const today = new Date();
         const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
@@ -15,7 +42,7 @@ export class DoctorService {
         const appointments = await this.prismaService.appointment.findMany({
             where: {
                 AND: [
-                    { doctorId: user.id },
+                    { doctorId: userId },
                     { date: { gte: startOfToday, lt: endOfToday } }
                 ]
             },
@@ -45,7 +72,7 @@ export class DoctorService {
         return allAppointments;
     }
     
-    async viewPrescriptionById(patientId: string) {
+    async getPatientPrescriptionById(patientId: string) {
         return this.prismaService.prescription.findMany({
             where: {
                 patientId
@@ -56,14 +83,26 @@ export class DoctorService {
         });
     }
 
+    async getPatientMedicationsById(patientId: string) {
+        const prescriptions = await this.prismaService.prescription.findMany({
+            where: {
+                patientId: patientId,
+            },
+            select:{
+                medications: true
+            }
+        });
 
-    async addPrescriptions(user: Doctor, patientId: string, prescriptionDto: CreatePrescriptionDto) {
+        return this.ismedicationValid(prescriptions);
+    }
+
+    async addPrescriptions(userId: string, patientId: string, prescriptionDto: CreatePrescriptionDto) {
 
         const {attachment, instructionForOtherDoctor, medicationType, status} = prescriptionDto;
 
         const prescription = await  this.prismaService.prescription.create({
             data: {
-                doctorId: user.id,
+                doctorId: userId,
                 patientId,
                 attachment, instructionForOtherDoctor, medicationType, status
             }
@@ -73,16 +112,20 @@ export class DoctorService {
             throw new InternalServerErrorException("Prescription could not be created");
         }
 
-        // console.log("Prescription created")
-
         prescriptionDto.medication.map(async (medication) => {
 
             // This is just for understanding purposes
             // const {medicine, dosage, numberOfDays,  instruction} = medication;
 
+            const date = Date.now();
+            let currentDate = new Date(date);
+            currentDate.setDate(currentDate.getDate() + medication.numberOfDays);
+            const validtill = currentDate.toISOString();
+
             await this.prismaService.medication.create({
                 data: {
                     ...medication,
+                    validTill: validtill,
                     prescription: { connect: { id: prescription.id } }
                 }
             });
@@ -105,11 +148,11 @@ export class DoctorService {
         return prescription;
     }
     
-    async deletePrescriptionRequest(user: Doctor, prescriptionId: string) {
+    async deletePrescriptionRequest(userId: string, prescriptionId: string) {
         const prescription = await this.prismaService.prescription.update({
             where: {
                 id: prescriptionId,
-                doctorId: user.id,
+                doctorId: userId,
             },
             data:{
                 status: PrescriptionStatus.INACTIVE
@@ -136,7 +179,6 @@ export class DoctorService {
         return "Status has been updated to INACTIVE";
     }
 
-
     private calculateAge(dateOfBirth: Date): number {
         const today = new Date();
         const birthDate = new Date(dateOfBirth);
@@ -147,4 +189,22 @@ export class DoctorService {
         }
         return age;
     }
+
+    private ismedicationValid(prescriptions){
+        const allMedications = [];
+        prescriptions.map(prescription => {
+            prescription.medications.filter(medication => {
+                let today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let date = new Date(medication.validTill);
+                date.setHours(0, 0, 0, 0);
+
+                if (date >= today) {
+                    allMedications.push(medication);
+                }
+            })
+        });
+        return allMedications;
+    }
+
 }

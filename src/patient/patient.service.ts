@@ -3,21 +3,75 @@ import { AppointmentStatus, Patient, Prescription, PrescriptionStatus, Prisma } 
 import { CreateAppointmentDto } from '../dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { platform } from 'os';
+import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class PatientService {
 
     constructor(private prismaService:PrismaService){}
 
-    async getPrescriptions(user: Patient): Promise<Prescription[]>{  
+    async getMyDetails_Patient(userId: string){
+        const patient = await this.prismaService.patient.findUnique({
+            where: {
+                id: userId
+            }
+        });
+
+        const appointmentCount = await this.prismaService.appointment.count({
+            where: {
+                patientId: userId
+            }
+        });
+
+        const medicationCount = await this.prismaService.prescription.count({
+            where: {
+                patientId: userId
+            }
+        });
+
+        return {patient, appointmentCount, medicationCount};
+    }
+
+    async getPrescriptions(userId: string): Promise<Prescription[]>{  
         return this.prismaService.prescription.findMany({
             where: {
-                patientId: user.id
+                patientId: userId
             }
         });
     }
 
-    async bookAppointment(user: Patient, appointmentDto: CreateAppointmentDto, status?: AppointmentStatus): Promise<string>{
+    async getPrescriptionById(userId: string, prescriptionId: string): Promise<Prescription>{
+        const prescription = await this.prismaService.prescription.findFirst({
+            where: {
+                id: prescriptionId,
+                patientId: userId
+            },
+            include:{
+                medications: true
+            }
+        });
+
+        if(!prescription){
+            throw new BadRequestException("Prescription not found");
+        }
+
+        return prescription;
+    }
+
+    async getAllCurrentMedications(userId: string){
+        const prescriptions = await this.prismaService.prescription.findMany({
+            where: {
+                patientId: userId,
+            },
+            select:{
+                medications: true
+            }
+        });
+
+        return this.ismedicationValid(prescriptions);
+    }
+
+    async bookAppointment(userId: string, appointmentDto: CreateAppointmentDto, status?: AppointmentStatus): Promise<string>{
         
         const doctor = await this.prismaService.doctor.findUnique({
             where: {
@@ -33,7 +87,7 @@ export class PatientService {
             const existsAppointment = await this.prismaService.appointment.findFirst({
                 where: {
                     AND: [
-                        { patientId: user.id },
+                        { patientId: userId },
                         { doctorId: appointmentDto.doctorId }
                     ]
                 }
@@ -46,7 +100,7 @@ export class PatientService {
 
         const appointment = await this.prismaService.appointment.create({
             data: {
-                patientId: user.id,
+                patientId: userId,
                 status: status,
                 ...appointmentDto,
             }
@@ -73,20 +127,20 @@ export class PatientService {
         
     }
 
-    async getAppointments(user: Patient){
+    async getAppointments(userId: string){
         return this.prismaService.appointment.findMany({
             where: {
-                patientId: user.id
+                patientId: userId
             }
         });
     }
 
-    async reviewAppointment(user: Patient, appointmentDto: CreateAppointmentDto, rating: number){
+    async reviewAppointment(userId: string, appointmentDto: CreateAppointmentDto, rating: number){
 
         const appointment = await this.prismaService.appointment.findFirst({
             where: {
                 AND: [
-                    { patientId: user.id },
+                    { patientId: userId },
                     { doctorId: appointmentDto.doctorId }
                 ]
             }
@@ -135,10 +189,10 @@ export class PatientService {
         return "Doctor reviewed successfully";
     }
 
-    async inactivePrescriptions(user: Patient): Promise<Prescription[]>{
+    async inactivePrescriptions(userId: string): Promise<Prescription[]>{
         const inactivePrescriptions = await this.prismaService.prescription.findMany({
             where: {
-                patientId: user.id,
+                patientId: userId,
                 status: PrescriptionStatus.INACTIVE
             }
         });
@@ -146,11 +200,11 @@ export class PatientService {
         return inactivePrescriptions;
     }
 
-    async deletePrescription(user: Patient, id: string): Promise<string>{
+    async deletePrescription(userId: string, id: string): Promise<string>{
         const deletedPrescription = await this.prismaService.prescription.delete({
             where: {
                 id: id,
-                patientId: user.id,
+                patientId: userId,
                 status: PrescriptionStatus.INACTIVE
             }
         });
@@ -160,6 +214,23 @@ export class PatientService {
         }
 
         return "Prescription deleted successfully";
+    }
+
+    private ismedicationValid(prescriptions){
+        const allMedications = [];
+        prescriptions.map(prescription => {
+            prescription.medications.filter(medication => {
+                let today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let date = new Date(medication.validTill);
+                date.setHours(0, 0, 0, 0);
+
+                if (date >= today) {
+                    allMedications.push(medication);
+                }
+            })
+        });
+        return allMedications;
     }
 
 }

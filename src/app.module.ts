@@ -9,6 +9,7 @@ import { CommonModuleModule } from './common-module/common-module.module';
 import { CpuIntensiveTasksModule } from './cpu-intensive-tasks/cpu-intensive-tasks.module';
 import { BullModule } from '@nestjs/bull';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { CloudinaryService } from './Services';
 
 @Global()
 @Module({
@@ -23,6 +24,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     EventEmitterModule.forRoot({})
   ],
   controllers: [],
-  providers: [AuthModule,PrismaModule,ConfigModule],
+  providers: [AuthModule,PrismaModule,ConfigModule, CloudinaryService],
 })
 export class AppModule {}

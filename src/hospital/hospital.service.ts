@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Hospital } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -6,25 +6,68 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class HospitalService {
     constructor(private prismaService: PrismaService) {}
 
-    async getDoctors(hospitalUser: Hospital) {
-        return this.prismaService.doctor.findMany({
-            where: {
-                affiliatedHospitalId: hospitalUser.id
+    async getMyHospitalDetails(hospitalId: string){
+        const hospital = await this.prismaService.hospital.findUnique({
+            where:{
+                id: hospitalId
             },
-            select:{
-                name:true,
-                email:true,
-                contactNumber:true,
-                specialization:true,
-                gender:true,
-                address:true,
-                rating:true,
-                _count: {
-                    select: {
-                        appointments: true
+            include:{
+                registeredDoctors:{
+                    select:{
+                        id:true,
+                        name:true,
+                        email:true,
+                        contactNumber:true,
+                        specialization:true,
+                        address:true,
+                        rating:true,
+                        avatar:true,
+                        totalAppointments:true,
                     }
                 }
             }
         });
+
+        delete hospital.password;
+        return hospital;
+    }
+
+    async getDoctors(hospitalId: string) {
+        return this.prismaService.hospital.findUnique({
+            where: {
+                id: hospitalId
+            },
+            select: {
+                registeredDoctors:{
+                    select:{
+                        id:true,
+                        name:true,
+                        email:true,
+                        contactNumber:true,
+                        specialization:true,
+                        address:true,
+                        rating:true,
+                        avatar:true,
+                        totalAppointments:true,
+                    }
+                }
+            }
+        });
+    }
+
+    async addDoctorToHospital(hospitalId: string, body: {doctorId: string}) {
+        const {doctorId} = body;
+        const hospital = await this.prismaService.hospital.update({
+            where:{
+                id: hospitalId
+            },data:{
+                registeredDoctors:{
+                    connect:{
+                        id: doctorId
+                    }
+                }
+            }
+        });
+        return;
     }
 }

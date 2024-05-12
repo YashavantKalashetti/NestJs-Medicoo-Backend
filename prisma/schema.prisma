@@ -32,43 +32,58 @@ model Patient {
 }
 
 model Doctor {
-  id                   String         @id @default(uuid())
-  name                 String
-  contactNumber        String
-  gender               Gender
-  email                String         @unique
-  dob                  DateTime
-  password             String
-  address              String
-  avatar               String?
-  consultingFees       Int            @default(500)
-  specialization       String
-  affiliatedHospital   Hospital?      @relation(fields: [affiliatedHospitalId], references: [id])
-  affiliatedHospitalId String?
-  totalAppointments    Int            @default(0)
-  rating               Float          @default(0.0)
-  prescriptions        Prescription[]
-  appointments         Appointment[]
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
+  id                  String         @id @default(uuid())
+  name                String
+  contactNumber       String
+  gender              Gender
+  email               String         @unique
+  dob                 DateTime
+  password            String
+  address             String
+  avatar              String?
+  consultingFees      Int            @default(500)
+  specialization      String
+  affiliatedHospitals Hospital[]     @relation("DoctorsHospitals")
+  totalAppointments   Int            @default(0)
+  rating              Float          @default(0.0)
+  prescriptions       Prescription[]
+  appointments        Appointment[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
   @@map("doctors")
 }
 
+model Hospital {
+  id                String   @id @default(uuid())
+  name              String
+  contactNumber     String
+  email             String   @unique
+  password          String
+  address           String
+  latitude          Float
+  longitude         Float
+  registeredDoctors Doctor[] @relation("DoctorsHospitals")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("hospitals")
+}
+
 model Prescription {
-  id                        String         @id @default(uuid())
-  patient                   Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id                        String             @id @default(uuid())
+  patient                   Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId                 String
-  doctor                    Doctor         @relation(fields: [doctorId], references: [id])
+  doctor                    Doctor             @relation(fields: [doctorId], references: [id])
   doctorId                  String
-  date                      DateTime       @default(now())
+  date                      DateTime           @default(now())
   medications               Medication[]
   attachment                String?
   instructionForOtherDoctor String?
-  medicationType            MedicationType @default(NORMAL)
-  status                    PrescriptionStatus         @default(ACTIVE)
-  createdAt                 DateTime       @default(now())
-  updatedAt                 DateTime       @updatedAt
+  medicationType            MedicationType     @default(NORMAL)
+  status                    PrescriptionStatus @default(ACTIVE)
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
 
   @@map("prescriptions")
 }
@@ -81,24 +96,9 @@ model Medication {
   dosage         String
   instruction    String
   numberOfDays   Int          @default(1)
+  validTill      DateTime     @default(now())
 
   @@map("medications")
-}
-
-model Hospital {
-  id            String   @id @default(uuid())
-  name          String
-  contactNumber String
-  email         String   @unique
-  password      String
-  address       String
-  latitude      Float
-  longitude     Float
-  doctors       Doctor[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@map("hospitals")
 }
 
 model Appointment {
@@ -117,14 +117,13 @@ model Appointment {
   @@map("appointments")
 }
 
-model Platform{
-  id        String   @id @default(uuid())
-  totalPrescriptions Int @default(0)
-  totalAppointments Int @default(0)
+model Platform {
+  id                 String @id @default(uuid())
+  totalPrescriptions Int    @default(0)
+  totalAppointments  Int    @default(0)
 
   @@map("platforms")
 }
-
 
 // Enums used in the schema
 

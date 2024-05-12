@@ -1,10 +1,15 @@
-import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { CommonModuleService } from './common-module.service';
 
 @Controller('common-module')
 export class CommonModuleController {
 
     constructor(private commonModuleService: CommonModuleService){}
+
+    // @Post("test")
+    // async test(@Body('id') identity, @Body('name') name, @Body('age') age){
+    //     console.log(identity, name, age);
+    // }
 
     @Get('/')
     async getDetailsOfPlatform(){
