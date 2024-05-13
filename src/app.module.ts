@@ -10,6 +10,7 @@ import { CpuIntensiveTasksModule } from './cpu-intensive-tasks/cpu-intensive-tas
 import { BullModule } from '@nestjs/bull';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CloudinaryService } from './Services';
+import { RedisProvider } from './Services/redisServer';
 
 @Global()
 @Module({
@@ -24,6 +25,6 @@ import { CloudinaryService } from './Services';
     EventEmitterModule.forRoot({})
   ],
   controllers: [],
-  providers: [AuthModule,PrismaModule,ConfigModule, CloudinaryService],
+  providers: [AuthModule,PrismaModule,ConfigModule, CloudinaryService, RedisProvider],
 })
 export class AppModule {}

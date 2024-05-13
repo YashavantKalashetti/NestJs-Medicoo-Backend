@@ -3,6 +3,7 @@ import { CpuIntensiveTasksController } from './cpu-intensive-tasks.controller';
 import { BullModule } from '@nestjs/bull';
 import { CpuIntensiveTasksProcessor } from './cpu-intensive-tasks.processor';
 import { CpuIntensiveTasksListner } from './cpu-intensiveListner';
+import { RedisProvider } from 'src/Services/redisServer';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { CpuIntensiveTasksListner } from './cpu-intensiveListner';
     }),
   ],
   controllers: [CpuIntensiveTasksController],
-  providers: [CpuIntensiveTasksProcessor, CpuIntensiveTasksListner],
+  providers: [CpuIntensiveTasksProcessor, CpuIntensiveTasksListner, RedisProvider],
+  exports: [BullModule, CpuIntensiveTasksProcessor],
 })
 export class CpuIntensiveTasksModule {}

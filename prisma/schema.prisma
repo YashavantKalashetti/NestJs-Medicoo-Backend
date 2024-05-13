@@ -42,7 +42,7 @@ model Doctor {
   address             String
   avatar              String?
   consultingFees      Int            @default(500)
-  specialization      String
+  specialization      DoctorSpecialization @default(GENERAL_PRACTITIONER)
   affiliatedHospitals Hospital[]     @relation("DoctorsHospitals")
   totalAppointments   Int            @default(0)
   rating              Float          @default(0.0)
@@ -61,6 +61,7 @@ model Hospital {
   email             String   @unique
   password          String
   address           String
+  speciality       HospitalSpeciality @default(GENERAL)
   latitude          Float
   longitude         Float
   registeredDoctors Doctor[] @relation("DoctorsHospitals")
@@ -146,4 +147,67 @@ enum AppointmentStatus {
   NORMAL
   EMERGENCY
   CANCLED
+}
+
+enum DoctorSpecialization {
+    GENERAL_PRACTITIONER
+    ANESTHESIOLOGIST
+    CARDIOLOGIST
+    DERMATOLOGIST
+    EMERGENCY_MEDICINE_PHYSICIAN
+    ENDOCRINOLOGIST
+    FAMILY_MEDICINE_PHYSICIAN
+    GASTROENTEROLOGIST
+    GERIATRICIAN
+    HEMATOLOGIST
+    INFECTIOUS_DISEASE_SPECIALIST
+    INTERNIST
+    NEONATOLOGIST
+    NEPHROLOGIST
+    NEUROLOGIST
+    OBSTETRICIAN_GYNECOLOGIST
+    ONCOLOGIST
+    OPHTHALMOLOGIST
+    ORTHOPEDIC_SURGEON
+    OTOLARYNGOLOGIST
+    PEDIATRICIAN
+    PHYSICAL_MEDICINE_REHABILITATION_PHYSICIAN
+    PLASTIC_SURGEON 
+    PSYCHIATRIST
+    PULMONOLOGIST
+    RADIOLOGIST
+    RHEUMATOLOGIST
+    SURGEON
+    UROLOGIST
+    ALLERGIST_IMMUNOLOGIST
+    INFECTIOUS_DISEASE_PHYSICIAN
+}
+
+
+enum HospitalSpeciality {
+  SUPER_SPECIALTY
+  MULTI_SPECIALTY
+  FERTILITY
+  EYE_CARE
+  CARDIAC
+  NEPHROLOGY
+  CANCER_TREATMENT
+  GENERAL
+  CHILDRENS_SPECIALTY
+  MATERNITY
+  ORTHOPEDIC
+  NEUROLOGY
+  PSYCHIATRY
+  GERIATRIC
+  DERMATOLOGY
+  GASTROENTEROLOGY
+  PULMONOLOGY
+  RHEUMATOLOGY
+  UROLOGY
+  ENT
+  DENTAL
+  ALLERGY
+  ENDOCRINOLOGY
+  PLASTIC_SURGERY
+    REHABILITATION_CENTER
 }

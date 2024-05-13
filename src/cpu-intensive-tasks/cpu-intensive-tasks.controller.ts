@@ -6,22 +6,11 @@ import { Queue } from 'bull';
 export class CpuIntensiveTasksController {
     constructor(@InjectQueue('cpuIntensiveTasks') private readonly cpuintensiveQueue: Queue) {}
 
-    @Post('posts')
-    async addPost() {
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        return;
-    }
-
-    @Get('posts')  
-    async getPosts() {
-        return;
-    }
-
     @Post('add')
-    async sendEmail(@Body() task: any) {
-        await this.cpuintensiveQueue.add('email', {
-            file: 'notes.txt',
-            id: 1
+    async setHospitalsInRedisCache(@Body() hospitals: any) {
+        await this.cpuintensiveQueue.add('cache-hospitals', {
+            hospitals
         });
     }
+
 }

@@ -1,29 +1,54 @@
 import { Process, Processor } from "@nestjs/bull";
-import { Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Job } from "bull";
+import { Redis } from "ioredis";
+import { hostname } from "os";
 
-
+@Injectable()
 @Processor('cpuIntensiveTasks')
 export class CpuIntensiveTasksProcessor {
 
-    constructor(private eventEmitter: EventEmitter2) {}
+    constructor(private eventEmitter: EventEmitter2,  @Inject('REDIS_CLIENT') private readonly redisClient: Redis) {}
 
     private logger = new Logger(CpuIntensiveTasksProcessor.name);
 
 
-    @Process('email')
+    @Process('cache-hospitals')
     async sendEmail(job: Job) {        
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        const {hospitals} = job.data.hospitals;
 
-        console.log('Job data:', job.data);
-        this.logger.debug('Start sending email');
-        this.logger.debug(job.data);
-        this.logger.debug('Email sent');
-        console.log('Email sent');
+        console.log(hospitals);
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        const pipeline = this.redisClient.pipeline();
+        hospitals.forEach(({ name, latitude, longitude, address, email, contactNumber }) => {
+        pipeline.geoadd('hospitals', longitude, latitude, name);
+        });
+        await pipeline.exec();
 
-        this.eventEmitter.emit('email.sent', job.data);
+        console.log(1)
+
+        const nearestHospitals = await this.redisClient.georadius('hospitals', 12.9411334, 77.5649215, 10000000000, 'km', 'WITHDIST', 'ASC');
+
+        console.log(2)
+
+        console.log('nearestHospitals', nearestHospitals);
+
+        this.eventEmitter.emit('cache.set');
     }
+
+    // @Process('cache-hospitals')
+    // async cacheHospitals(job: any) {
+
+    //     console.log('Job data:', job.data);
+    //     const {hospitals} = job;
+
+    //     hospitals.forEach(async (hospital: any) => {
+    //         const key = `hospital:${hospital.id}`;
+    //         await this.redisClient.set(key, JSON.stringify(hospital));
+    //     });
+
+    //     console.log('Hospitals cached successfully');
+    // }
+
 }

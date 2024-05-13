@@ -1,5 +1,6 @@
+import { HospitalSpeciality } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
-import { IsDecimal, IsEmail, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsDecimal, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class HospitalSignupDto{
     @IsString()         
@@ -29,4 +30,8 @@ export class HospitalSignupDto{
     @IsNumber()
     @IsNotEmpty()
     longitude: Decimal;
+
+    @IsString()
+    @IsOptional()
+    speciality: HospitalSpeciality;
 }

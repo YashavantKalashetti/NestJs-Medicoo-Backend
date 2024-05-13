@@ -1,4 +1,4 @@
-import { Gender } from "@prisma/client";
+import { DoctorSpecialization, Gender } from "@prisma/client";
 import { IsDateString, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class DoctorSignupDto{
@@ -20,7 +20,7 @@ export class DoctorSignupDto{
 
     @IsString()         
     @IsNotEmpty()
-    specialization: string;
+    specialization: DoctorSpecialization;
 
     @IsString()         
     @IsNotEmpty()

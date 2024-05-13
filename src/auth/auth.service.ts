@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma/prisma.service';
 
 import * as argon2 from "argon2";
@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { SigninDto, PatientSignupDto, DoctorSignupDto, HospitalSignupDto } from '../dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { UserEntity } from '../dto/UserEntity.dto';
+import { DoctorSpecialization, HospitalSpeciality } from '@prisma/client';
 
 export enum ROLES {
     PATIENT = 'PATIENT',
@@ -87,6 +88,13 @@ export class AuthService {
     async doctorSignup(doctorSignupDto: DoctorSignupDto){
         
         try {
+
+            const { specialization } = doctorSignupDto;
+
+            if(specialization && !DoctorSpecialization[specialization]){
+                throw new BadRequestException('Specialisation must be a valid value given in the enum');
+            }
+
             const hashedPassword = await argon2.hash(doctorSignupDto.password);
             const user = await this.prismaService.doctor.create({
                 data:{
@@ -131,6 +139,12 @@ export class AuthService {
 
     async hospitalSignup(hospitalSignupDto: HospitalSignupDto){
         try {
+            const { speciality } = hospitalSignupDto;
+
+            if(speciality && !HospitalSpeciality[speciality]){
+                throw new BadRequestException('Speciality must be a valid value given in the enum');
+            }
+
             const hashedPassword = await argon2.hash(hospitalSignupDto.password);
             const hospital = await this.prismaService.hospital.create({
                 data:{
