@@ -179,6 +179,27 @@ export class DoctorService {
         return "Status has been updated to INACTIVE";
     }
 
+    async divergeAppointments(doctorId: string, oldDoctorId: string, newDoctorId: string, appointmentId: string) {
+        const appointment = await this.prismaService.appointment.update({
+            where:{
+                id: appointmentId,
+                doctorId: oldDoctorId,
+                hospitalId: null,
+            },
+            data:{
+                doctorId: newDoctorId
+            }
+        });
+
+        if(!appointment){
+            throw new InternalServerErrorException("Appointment could not be updated");
+        }
+
+        return appointment;
+    }
+
+    // helpers
+
     private calculateAge(dateOfBirth: Date): number {
         const today = new Date();
         const birthDate = new Date(dateOfBirth);
@@ -206,5 +227,7 @@ export class DoctorService {
         });
         return allMedications;
     }
+
+
 
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { DoctorService } from './doctor.service';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser, Roles } from '../auth/customDecorator';
@@ -50,6 +50,13 @@ export class DoctorController {
     @Post('delete-prescription-request/:id')
     async deletePrescriptionRequest(@GetUser('id') userId: string, @Param('id', ParseUUIDPipe) prescriptionId: string) {
         return this.doctorService.deletePrescriptionRequest(userId, prescriptionId);
+    }
+
+
+    @Patch('diverge-appointments')
+    async divergeAppointments(@GetUser('id') doctorId: string, @Body() body: {oldDoctorId: string, newDoctorId: string , appointmentId: string}){
+        const { oldDoctorId, newDoctorId, appointmentId } = body;
+        return this.doctorService.divergeAppointments(doctorId, oldDoctorId, newDoctorId, appointmentId);
     }
 
 }

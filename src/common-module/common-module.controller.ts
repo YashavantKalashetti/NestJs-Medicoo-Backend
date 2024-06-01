@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post, Redirect } from '@nestjs/common';
 import { CommonModuleService } from './common-module.service';
 import { DoctorSpecialization, Hospital, HospitalSpeciality } from '@prisma/client';
 
@@ -11,6 +11,11 @@ export class CommonModuleController {
     // async test(@Body('id') identity, @Body('name') name, @Body('age') age){
     //     console.log(identity, name, age);
     // }
+
+    @Get('/one')
+    async test(){
+        Redirect('/common-module/');
+    }
 
     @Get('/')
     async getDetailsOfPlatform(){

@@ -25,6 +25,7 @@ model Patient {
   address       String
   prescriptions Prescription[]
   appointments  Appointment[]
+  hospitalsRegistered Hospital[] @relation("PatientHospitals")
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -65,6 +66,8 @@ model Hospital {
   latitude          Float
   longitude         Float
   registeredDoctors Doctor[] @relation("DoctorsHospitals")
+  registeredPatients  Patient[] @relation("PatientHospitals")
+  appointments      Appointment[]
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -113,6 +116,9 @@ model Appointment {
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   status    AppointmentStatus @default(NORMAL)
+  mode      AppointmentMode   @default(ONLINE)
+  hospital  Hospital?          @relation(fields: [hospitalId], references: [id])
+  hospitalId String?
 
   // @@unique([patientId, doctorId], name: "appointent_unique_constraint")
   @@map("appointments")
@@ -147,6 +153,11 @@ enum AppointmentStatus {
   NORMAL
   EMERGENCY
   CANCLED
+}
+
+enum AppointmentMode {
+  ONLINE
+  OFFLINE
 }
 
 enum DoctorSpecialization {

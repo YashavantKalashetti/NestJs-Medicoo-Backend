@@ -1,5 +1,6 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { Hospital } from '@prisma/client';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { AppointmentMode, Hospital } from '@prisma/client';
+import { CreateAppointmentDto, PatientSignupDto } from 'src/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -32,6 +33,16 @@ export class HospitalService {
         return hospital;
     }
 
+    async getHospitalAppointments(hospitalId: string) {
+        return this.prismaService.appointment.findMany({
+            where: {
+                hospitalId: hospitalId
+            }
+        });
+    }
+
+    // Doctor Services
+
     async getDoctors(hospitalId: string) {
         return this.prismaService.hospital.findUnique({
             where: {
@@ -55,7 +66,31 @@ export class HospitalService {
         });
     }
 
-    async addDoctorToHospital(hospitalId: string, body: {doctorId: string}) {
+    async getDoctor(hospitalId: string, doctorId: string) {
+        return this.prismaService.hospital.findUnique({
+            where: {
+                id: hospitalId
+            },
+            select: {
+                registeredDoctors:{
+                    where:{
+                        id: doctorId
+                    },select:{
+                        id:true,
+                        name:true,
+                        email:true,
+                        contactNumber:true,
+                        specialization:true,
+                        address:true,
+                        rating:true,
+                        avatar:true,
+                    }
+                }
+            }
+        });
+    }
+
+    async registerDoctorToHospital(hospitalId: string, body: {doctorId: string}) {
         const {doctorId} = body;
         const hospital = await this.prismaService.hospital.update({
             where:{
@@ -70,4 +105,149 @@ export class HospitalService {
         });
         return;
     }
+
+    async removeDoctorFromHospital(hospitalId: string, doctorId: string) {
+        const hospital = await this.prismaService.hospital.update({
+            where:{
+                id: hospitalId
+            },data:{
+                registeredDoctors:{
+                    disconnect:{
+                        id: doctorId
+                    }
+                }
+            }
+        });
+        return;
+    }
+
+    async getDoctorAppointments(hospitalId: string, doctorId: string) {
+        return this.prismaService.appointment.findMany({
+            where: {
+                doctorId: doctorId,
+                hospitalId: hospitalId
+            }
+        });
+    }
+
+    async divergeAppointments(hospitalId: string, oldDoctorId: string, newDoctorId: string) {
+        const appointments = await this.prismaService.appointment.updateMany({
+            where:{
+                doctorId: oldDoctorId,
+                hospitalId: hospitalId
+            },
+            data:{
+                doctorId: newDoctorId
+            }
+        });
+    }
+
+    async  divergeSingleAppointment(hospitalId: string, oldDoctorId: string, newDoctorId: string , appointmentId: string) {
+        const appointment = await this.prismaService.appointment.update({
+            where:{
+                id: appointmentId,
+                hospitalId: hospitalId,
+                doctorId: oldDoctorId,
+            },data:{
+                doctorId: newDoctorId
+            }
+        });
+        return appointment;
+    }
+
+
+    // Patient Services
+    async getPatients(hospitalId: string) {
+        return this.prismaService.hospital.findUnique({
+            where: {
+                id: hospitalId
+            },
+            select: {
+                registeredPatients:{
+                    select:{
+                        id:true,
+                        name:true,
+                        email:true,
+                        contactNumber:true,
+                        address:true,
+                    }
+                }
+            }
+        }); 
+    }
+
+    async getPatient(hospitalId: string, patientId: string) {
+        return this.prismaService.hospital.findUnique({
+            where: {
+                id: hospitalId
+            },
+            select: {
+                registeredPatients:{
+                    where:{
+                        id: patientId
+                    },select:{
+                        id:true,
+                        name:true,
+                        email:true,
+                        contactNumber:true,
+                        address:true,
+                    }
+                }
+            }
+        });
+    }
+
+    async registerPatientToHospital(hospitalId: string, body: {patientId: string}) {
+        const {patientId} = body;
+        const hospital = await this.prismaService.hospital.update({
+            where:{
+                id: hospitalId
+            },data:{
+                registeredPatients:{
+                    connect:{
+                        id: patientId
+                    }
+                }
+            }
+        });
+        return ;
+    }
+
+    async getPatientAppointmentsInHospital(hospitalId: string, patientId: string) {
+        return this.prismaService.appointment.findMany({
+            where: {
+                patientId: patientId,
+                hospitalId: hospitalId
+            }
+        });
+    }
+
+    async bookAppointment(hospitalId: string, appointmentDto: CreateAppointmentDto) {
+
+        const doctor = await this.prismaService.doctor.findUnique({
+            where: {
+                id: appointmentDto.doctorId
+            }
+        });
+        
+        if(!doctor){
+            throw new BadRequestException("Doctor not found");
+        }
+
+        const appointment = await this.prismaService.appointment.create({
+            data: {
+                patientId: appointmentDto.patientId,
+                hospitalId: hospitalId,
+                ...appointmentDto,
+            }
+        });
+
+        if(!appointment){
+            throw new InternalServerErrorException("Appointment not created");
+        }
+
+        return appointment.id;
+    }
+    
+
 }
