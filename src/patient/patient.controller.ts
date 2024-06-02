@@ -37,7 +37,6 @@ export class PatientController {
 
     @Post('book-emergency-appointment')
     async bookEmergencyAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto){
-        console.log(appointmentDto)
         return this.patientService.bookAppointment(userId,appointmentDto, AppointmentStatus.EMERGENCY);
     }
 

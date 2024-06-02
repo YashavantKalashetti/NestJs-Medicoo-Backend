@@ -29,7 +29,7 @@ export class HospitalService {
             }
         });
 
-        delete hospital.password;
+        delete hospital?.password;
         return hospital;
     }
 
@@ -90,8 +90,10 @@ export class HospitalService {
         });
     }
 
-    async registerDoctorToHospital(hospitalId: string, body: {doctorId: string}) {
-        const {doctorId} = body;
+    async registerDoctorToHospital(hospitalId: string, doctorId: string) {
+        if(!doctorId){
+            throw new BadRequestException("Doctor Id is required");
+        }
         const hospital = await this.prismaService.hospital.update({
             where:{
                 id: hospitalId
@@ -103,7 +105,7 @@ export class HospitalService {
                 }
             }
         });
-        return;
+        return {msg: "Registered Doctor to Hospital"};
     }
 
     async removeDoctorFromHospital(hospitalId: string, doctorId: string) {
@@ -118,16 +120,22 @@ export class HospitalService {
                 }
             }
         });
-        return;
+        
+        return {msg: "Doctor Regstration removes from Hospital"};
     }
 
     async getDoctorAppointments(hospitalId: string, doctorId: string) {
-        return this.prismaService.appointment.findMany({
+        const appointments= await this.prismaService.appointment.findMany({
             where: {
                 doctorId: doctorId,
                 hospitalId: hospitalId
             }
         });
+
+        const offlineAppointments = appointments.filter(appointment => appointment.mode === AppointmentMode.OFFLINE);
+        const onlineAppointments = appointments.filter(appointment => appointment.mode === AppointmentMode.ONLINE);
+
+        return {offlineAppointments, onlineAppointments};
     }
 
     async divergeAppointments(hospitalId: string, oldDoctorId: string, newDoctorId: string) {
@@ -140,6 +148,8 @@ export class HospitalService {
                 doctorId: newDoctorId
             }
         });
+
+        return {msg: "Appointments Diverged"};
     }
 
     async  divergeSingleAppointment(hospitalId: string, oldDoctorId: string, newDoctorId: string , appointmentId: string) {
@@ -152,7 +162,8 @@ export class HospitalService {
                 doctorId: newDoctorId
             }
         });
-        return appointment;
+        
+        return {msg: "Appointment Diverged"};
     }
 
 
@@ -177,24 +188,24 @@ export class HospitalService {
     }
 
     async getPatient(hospitalId: string, patientId: string) {
-        return this.prismaService.hospital.findUnique({
+        const patient = await  this.prismaService.patient.findUnique({
             where: {
-                id: hospitalId
-            },
-            select: {
-                registeredPatients:{
-                    where:{
-                        id: patientId
-                    },select:{
-                        id:true,
-                        name:true,
-                        email:true,
-                        contactNumber:true,
-                        address:true,
+                id: patientId,
+                hospitalsRegistered:{
+                    some:{
+                        id: hospitalId
                     }
                 }
+            },select:{
+                id:true,
+                name:true,
+                email:true,
+                contactNumber:true,
+                address:true,
             }
         });
+
+        return {patient: patient};
     }
 
     async registerPatientToHospital(hospitalId: string, body: {patientId: string}) {
@@ -210,44 +221,64 @@ export class HospitalService {
                 }
             }
         });
-        return ;
+        return {msg: "Registered Patient to Hospital"};
     }
 
     async getPatientAppointmentsInHospital(hospitalId: string, patientId: string) {
-        return this.prismaService.appointment.findMany({
+        const appointments = await this.prismaService.appointment.findMany({
             where: {
                 patientId: patientId,
                 hospitalId: hospitalId
             }
         });
+
+        return {appointments: appointments};
     }
 
     async bookAppointment(hospitalId: string, appointmentDto: CreateAppointmentDto) {
+            
+            const doctor = await this.prismaService.hospital.findUnique({
+                where: {
+                    id: hospitalId
+                },
+                select: {
+                    registeredDoctors:{
+                        where:{
+                            id: appointmentDto.doctorId
+                        }
+                    }
+                }
+            });
 
-        const doctor = await this.prismaService.doctor.findUnique({
-            where: {
-                id: appointmentDto.doctorId
+            if(!doctor.registeredDoctors.length){
+                throw new BadRequestException("Doctor not registered with hospital");
             }
-        });
+
+            const patient = await this.prismaService.patient.findUnique({
+                where: {
+                    id: appointmentDto.patientId
+                }
+            });
+
+            if(!patient){
+                throw new BadRequestException("Patient not found");
+            }
+    
+            const appointment = await this.prismaService.appointment.create({
+                data: {
+                    patientId: appointmentDto.patientId,
+                    hospitalId: hospitalId,
+                    ...appointmentDto,
+                }
+            });
+    
+            if(!appointment){
+                throw new InternalServerErrorException("Appointment not created");
+            }
+    
+            return appointment.id;
         
-        if(!doctor){
-            throw new BadRequestException("Doctor not found");
-        }
-
-        const appointment = await this.prismaService.appointment.create({
-            data: {
-                patientId: appointmentDto.patientId,
-                hospitalId: hospitalId,
-                ...appointmentDto,
-            }
-        });
-
-        if(!appointment){
-            throw new InternalServerErrorException("Appointment not created");
-        }
-
-        return appointment.id;
     }
     
-
+    
 }

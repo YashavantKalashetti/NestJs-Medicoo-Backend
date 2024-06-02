@@ -4,10 +4,8 @@ import { CreateMedicationDto } from "./createMedication.dto";
 
 export class CreatePrescriptionDto{
 
-    @IsString()
-    @IsNotEmpty()
     @IsOptional()
-    attachment: string;
+    attachments: string[];
 
     @IsString()
     @IsOptional()

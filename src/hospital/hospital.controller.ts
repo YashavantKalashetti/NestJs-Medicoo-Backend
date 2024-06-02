@@ -29,17 +29,22 @@ export class HospitalController {
         return this.hospitalService.getDoctors(hospitalId);
     }
 
-    @Post('register-doctor')
-    async registerDoctorToHospital(@GetUser('id') hospitalId: string, @Body() body: {doctorId: string}){
-        return this.hospitalService.registerDoctorToHospital(hospitalId, body);
+    @Get('doctors/:doctorId')
+    async getDoctor(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
+        return this.hospitalService.getDoctor(hospitalId, doctorId);
+    }
+
+    @Patch('register-doctor')
+    async registerDoctorToHospital(@GetUser('id') hospitalId: string, @Body('doctorId') doctorId: string){
+        return this.hospitalService.registerDoctorToHospital(hospitalId, doctorId);
     }
 
     @Patch('remove-doctor')
-    async removeDoctorFromHospital(@GetUser('id') hospitalId: string, @Body() doctorId: string){
+    async removeDoctorFromHospital(@GetUser('id') hospitalId: string, @Body('doctorId') doctorId: string){
         return this.hospitalService.removeDoctorFromHospital(hospitalId, doctorId);
     }
 
-    @Get('doctors/:doctorId')
+    @Get('doctor-appointment/:doctorId')
     async getDoctorAppointments(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
         return this.hospitalService.getDoctorAppointments(hospitalId, doctorId);
     }

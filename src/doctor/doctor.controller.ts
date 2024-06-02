@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query, UnsupportedMediaTypeException, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { DoctorService } from './doctor.service';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser, Roles } from '../auth/customDecorator';
@@ -6,7 +6,7 @@ import { ROLES } from '../auth/auth.service';
 import { RolesGuard } from '../auth/JwtStrategy';
 import { Doctor } from '@prisma/client';
 import { CreatePrescriptionDto } from '../dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService, multerOptions } from 'src/Services';
 
 @Roles([ROLES.DOCTOR])
@@ -30,18 +30,29 @@ export class DoctorController {
         return this.doctorService.getPatientPrescriptionById(patientId);
     }
 
+    @Get('get-patientReports/:id')
+    async getPatientReportsById(@Param('id') patientId: string, @Query('search') search: string) {
+        return this.doctorService.getPatientReportsById(patientId, search);
+    }
+
     @Get('get-patientMedications/:id')
     async getPatientMedicationsById(@Param('id', ParseUUIDPipe) patientId: string) {
         return this.doctorService.getPatientMedicationsById(patientId);
     }
 
     @Post('addPrecriptions/:id')
-    @UseInterceptors(FileInterceptor('attachment', multerOptions))
-    async addPrescriptions(@UploadedFile() file: Express.Multer.File, @GetUser('id') userId: string, @Param('id', ParseUUIDPipe) patientId: string, @Body() prescriptionDto: CreatePrescriptionDto){
-        const filePath = file?.path;
-        if(filePath){
-            const uploadResponse = await this.cloudinaryService.uploadImage(filePath);
-            prescriptionDto.attachment = uploadResponse.url;
+    @UseInterceptors(FilesInterceptor('attachments',10, multerOptions))
+    async addPrescriptions(@UploadedFiles() files: Express.Multer.File[], @GetUser('id') userId: string, @Param('id', ParseUUIDPipe) patientId: string, @Body() prescriptionDto: CreatePrescriptionDto){
+        prescriptionDto.attachments = [];
+        if(files){
+            await Promise.all(files?.map(async (file) => {
+                try {
+                    const uploadResponse = await this.cloudinaryService.uploadImage(file.path);
+                    prescriptionDto.attachments.push(uploadResponse.url);
+                } catch (error) {
+                    throw new UnsupportedMediaTypeException("Only Images and Pdfs are allowed")
+                }
+            }));
         }
         return this.doctorService.addPrescriptions(userId, patientId, prescriptionDto);
     }
@@ -51,7 +62,6 @@ export class DoctorController {
     async deletePrescriptionRequest(@GetUser('id') userId: string, @Param('id', ParseUUIDPipe) prescriptionId: string) {
         return this.doctorService.deletePrescriptionRequest(userId, prescriptionId);
     }
-
 
     @Patch('diverge-appointments')
     async divergeAppointments(@GetUser('id') doctorId: string, @Body() body: {oldDoctorId: string, newDoctorId: string , appointmentId: string}){

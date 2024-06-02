@@ -2,10 +2,12 @@ import { ForbiddenException, Injectable, InternalServerErrorException } from '@n
 import { Doctor, PrescriptionStatus } from '@prisma/client';
 import { CreatePrescriptionDto } from '../dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 
 @Injectable()
 export class DoctorService {
-    constructor(private prismaService: PrismaService) {}
+    constructor(private prismaService: PrismaService,private config: ConfigService) {}
 
     async getMyDetails_Doctor(userId: string) {
         const doctor = await this.prismaService.doctor.findUnique({
@@ -68,8 +70,11 @@ export class DoctorService {
             (clonedAppointment.patient as any).age = this.calculateAge(app.patient.dob);
             return clonedAppointment;
         });
+
+        const offlineAppointments = allAppointments.filter(appointment => appointment.mode === "OFFLINE");
+        const onlineAppointments = allAppointments.filter(appointment => appointment.mode === "ONLINE");
     
-        return allAppointments;
+        return {offlineAppointments, onlineAppointments};
     }
     
     async getPatientPrescriptionById(patientId: string) {
@@ -98,21 +103,25 @@ export class DoctorService {
 
     async addPrescriptions(userId: string, patientId: string, prescriptionDto: CreatePrescriptionDto) {
 
-        const {attachment, instructionForOtherDoctor, medicationType, status} = prescriptionDto;
+        const {attachments, instructionForOtherDoctor, medicationType, status} = prescriptionDto;
 
         const prescription = await  this.prismaService.prescription.create({
             data: {
                 doctorId: userId,
                 patientId,
-                attachment, instructionForOtherDoctor, medicationType, status
+                attachments, instructionForOtherDoctor, medicationType, status
             }
         });
 
+        if (attachments && attachments.length > 0) {
+            await this.handelElasticSearchEntries(attachments, patientId, prescription.id);
+        }        
+            
         if(!prescription){
             throw new InternalServerErrorException("Prescription could not be created");
         }
 
-        prescriptionDto.medication.map(async (medication) => {
+        prescriptionDto?.medication?.map(async (medication) => {
 
             // This is just for understanding purposes
             // const {medicine, dosage, numberOfDays,  instruction} = medication;
@@ -146,6 +155,55 @@ export class DoctorService {
         // });
 
         return prescription;
+    }
+
+    async getPatientReportsById(patientId: string, search: string="") {
+        search = search?.trim();
+        if(search == ""){
+
+            const attachments = await this.prismaService.prescriptionAttachementElasticSearch.findMany({
+                where:{
+                    patientId,
+                }
+            });
+
+            const urls = attachments.map(attachment => attachment.url);
+
+            return urls;
+
+        }
+
+        const response = await fetch(`${this.config.get('Elastic_Server')}/elasticSearch-reports`, {
+            method: 'POST',
+            body: JSON.stringify({
+                patientId,
+                searchText: search
+            }),
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if(!response.ok){
+            new InternalServerErrorException("Error in fetching data from elastic search");
+        }
+
+        const { files } = await response.json();
+
+        // console.log(files);
+
+        const documents = files?.map(file => file.documentId);
+
+        const attachments = await this.prismaService.prescriptionAttachementElasticSearch.findMany({
+            where:{
+                id: {
+                    in: documents
+                },
+            }
+        });
+        
+        const urls = attachments.map(attachment => attachment.url);
+
+        return urls;
+        
     }
     
     async deletePrescriptionRequest(userId: string, prescriptionId: string) {
@@ -228,6 +286,70 @@ export class DoctorService {
         return allMedications;
     }
 
+    private async handelElasticSearchEntries(attachments: string[], patientId: string, prescriptionId: string){
+        await Promise.all(attachments?.map(async (attachment: string) => {
+
+            try {
+                const elasticEntry = await this.prismaService.prescriptionAttachementElasticSearch.create({
+                    data:{
+                        patientId,
+                        prescriptionId,
+                        url: attachment
+                    }
+                });
+
+                console.log(elasticEntry.id)
+
+                await this.getFileType(attachment, patientId, elasticEntry.id);
+
+
+            } catch (error) {
+                console.log(error.message);
+            }
+
+        }));
+    }
+
+    private async getFileType(url, patientId, databaseId) {
+        try {
+            const splitUrl = url.split('.');
+            const fileExtension = splitUrl[splitUrl.length - 1];
+
+            switch (fileExtension) {
+                case 'pdf':
+                case 'doc':
+                case 'docx':
+                    console.log(fileExtension)
+                    await axios.post(`${this.config.get('Elastic_Server')}/pdfToText`, {
+                        databaseId,
+                        patientId,
+                        url
+                    });
+                    return 'pdf';
+                case 'jpg':
+                case 'jpeg':
+                case 'png':
+                case 'gif':
+                case 'bmp':
+                case 'tiff':
+                case 'webp':
+                case 'avif':
+                    console.log(fileExtension)
+                    await axios.post(`${this.config.get('Elastic_Server')}/imageToText`, {
+                        databaseId,
+                        patientId,
+                        url
+                    });
+                    return 'image';
+                default:
+                    console.log(fileExtension)
+                    return 'unknown';
+            }
+            
+        } catch (error) {
+            console.error('Error fetching file type:', error.message);
+        }
+    }
 
 
 }

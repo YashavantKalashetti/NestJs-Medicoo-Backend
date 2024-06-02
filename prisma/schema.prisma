@@ -14,80 +14,83 @@ datasource db {
 }
 
 model Patient {
-  id            String         @id @default(uuid())
-  name          String
-  contactNumber String
-  aadharNumber  String         @unique
-  gender        Gender
-  email         String         @unique
-  dob           DateTime
-  password      String
-  address       String
-  prescriptions Prescription[]
-  appointments  Appointment[]
-  hospitalsRegistered Hospital[] @relation("PatientHospitals")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                       String                     @id @default(uuid())
+  name                     String
+  contactNumber            String
+  aadharNumber             String                     @unique
+  gender                   Gender
+  email                    String                     @unique
+  dob                      DateTime
+  password                 String
+  address                  String
+  prescriptions            Prescription[]
+  appointments             Appointment[]
+  hospitalsRegistered      Hospital[]                 @relation("PatientHospitals")
+  prescriptionAttachementElasticSearch PrescriptionAttachementElasticSearch[]
+  // medicalDetails PatientMedicalDetails?
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
 
   @@map("patients")
 }
 
 model Doctor {
-  id                  String         @id @default(uuid())
+  id                  String               @id @default(uuid())
   name                String
   contactNumber       String
   gender              Gender
-  email               String         @unique
+  email               String               @unique
   dob                 DateTime
   password            String
   address             String
   avatar              String?
-  consultingFees      Int            @default(500)
+  consultingFees      Int                  @default(500)
   specialization      DoctorSpecialization @default(GENERAL_PRACTITIONER)
-  affiliatedHospitals Hospital[]     @relation("DoctorsHospitals")
-  totalAppointments   Int            @default(0)
-  rating              Float          @default(0.0)
+  affiliatedHospitals Hospital[]           @relation("DoctorsHospitals")
+  totalAppointments   Int                  @default(0)
+  rating              Float                @default(0.0)
   prescriptions       Prescription[]
   appointments        Appointment[]
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
   @@map("doctors")
 }
 
 model Hospital {
-  id                String   @id @default(uuid())
-  name              String
-  contactNumber     String
-  email             String   @unique
-  password          String
-  address           String
-  speciality       HospitalSpeciality @default(GENERAL)
-  latitude          Float
-  longitude         Float
-  registeredDoctors Doctor[] @relation("DoctorsHospitals")
-  registeredPatients  Patient[] @relation("PatientHospitals")
-  appointments      Appointment[]
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                 String             @id @default(uuid())
+  name               String
+  contactNumber      String
+  email              String             @unique
+  password           String
+  address            String
+  speciality         HospitalSpeciality @default(GENERAL)
+  latitude           Float
+  longitude          Float
+  registeredDoctors  Doctor[]           @relation("DoctorsHospitals")
+  registeredPatients Patient[]          @relation("PatientHospitals")
+  appointments       Appointment[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   @@map("hospitals")
 }
 
 model Prescription {
-  id                        String             @id @default(uuid())
-  patient                   Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id                        String                     @id @default(uuid())
+  patient                   Patient                    @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId                 String
-  doctor                    Doctor             @relation(fields: [doctorId], references: [id])
+  doctor                    Doctor                     @relation(fields: [doctorId], references: [id])
   doctorId                  String
-  date                      DateTime           @default(now())
+  date                      DateTime                   @default(now())
   medications               Medication[]
-  attachment                String?
+  attachments               String[]
   instructionForOtherDoctor String?
-  medicationType            MedicationType     @default(NORMAL)
-  status                    PrescriptionStatus @default(ACTIVE)
-  createdAt                 DateTime           @default(now())
-  updatedAt                 DateTime           @updatedAt
+  medicationType            MedicationType             @default(NORMAL)
+  status                    PrescriptionStatus         @default(ACTIVE)
+  prescriptionAttachementElasticSearch   PrescriptionAttachementElasticSearch[]
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
 
   @@map("prescriptions")
 }
@@ -106,18 +109,18 @@ model Medication {
 }
 
 model Appointment {
-  id        String            @id @default(uuid())
-  patient   Patient           @relation(fields: [patientId], references: [id])
-  patientId String
-  doctor    Doctor            @relation(fields: [doctorId], references: [id])
-  doctorId  String
-  date      DateTime          @default(now())
-  reason    String
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  status    AppointmentStatus @default(NORMAL)
-  mode      AppointmentMode   @default(ONLINE)
-  hospital  Hospital?          @relation(fields: [hospitalId], references: [id])
+  id         String            @id @default(uuid())
+  patient    Patient           @relation(fields: [patientId], references: [id])
+  patientId  String
+  doctor     Doctor            @relation(fields: [doctorId], references: [id])
+  doctorId   String
+  date       DateTime          @default(now())
+  reason     String
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  status     AppointmentStatus @default(NORMAL)
+  mode       AppointmentMode   @default(ONLINE)
+  hospital   Hospital?         @relation(fields: [hospitalId], references: [id])
   hospitalId String?
 
   // @@unique([patientId, doctorId], name: "appointent_unique_constraint")
@@ -131,6 +134,44 @@ model Platform {
 
   @@map("platforms")
 }
+
+model PrescriptionAttachementElasticSearch {
+  id             String       @id @default(uuid())
+  url            String       @unique
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  prescriptionId String
+  patient        Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId      String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("prescription_attachments")
+}
+
+// model PatientMedicalDetails {
+//   id        String   @id @default(uuid())
+//   patient   Patient  @relation(fields: [patientId], references: [id])
+//   patientId String @unique
+//   age      Int
+//   gender   Int
+//   height    Float
+//   weight    Float
+//   bloodGroup String
+//   allergies String[]
+//   Glucose  Float
+//   BloodPressure Int
+//   BMI Float @map("weight/height^2")
+//   systolic  Int
+//   diastolic Int
+//   hypertension Int
+//   diabetes Int
+//   smoking Int
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@map("patient_medical_details")
+// }
 
 // Enums used in the schema
 
@@ -161,39 +202,38 @@ enum AppointmentMode {
 }
 
 enum DoctorSpecialization {
-    GENERAL_PRACTITIONER
-    ANESTHESIOLOGIST
-    CARDIOLOGIST
-    DERMATOLOGIST
-    EMERGENCY_MEDICINE_PHYSICIAN
-    ENDOCRINOLOGIST
-    FAMILY_MEDICINE_PHYSICIAN
-    GASTROENTEROLOGIST
-    GERIATRICIAN
-    HEMATOLOGIST
-    INFECTIOUS_DISEASE_SPECIALIST
-    INTERNIST
-    NEONATOLOGIST
-    NEPHROLOGIST
-    NEUROLOGIST
-    OBSTETRICIAN_GYNECOLOGIST
-    ONCOLOGIST
-    OPHTHALMOLOGIST
-    ORTHOPEDIC_SURGEON
-    OTOLARYNGOLOGIST
-    PEDIATRICIAN
-    PHYSICAL_MEDICINE_REHABILITATION_PHYSICIAN
-    PLASTIC_SURGEON 
-    PSYCHIATRIST
-    PULMONOLOGIST
-    RADIOLOGIST
-    RHEUMATOLOGIST
-    SURGEON
-    UROLOGIST
-    ALLERGIST_IMMUNOLOGIST
-    INFECTIOUS_DISEASE_PHYSICIAN
+  GENERAL_PRACTITIONER
+  ANESTHESIOLOGIST
+  CARDIOLOGIST
+  DERMATOLOGIST
+  EMERGENCY_MEDICINE_PHYSICIAN
+  ENDOCRINOLOGIST
+  FAMILY_MEDICINE_PHYSICIAN
+  GASTROENTEROLOGIST
+  GERIATRICIAN
+  HEMATOLOGIST
+  INFECTIOUS_DISEASE_SPECIALIST
+  INTERNIST
+  NEONATOLOGIST
+  NEPHROLOGIST
+  NEUROLOGIST
+  OBSTETRICIAN_GYNECOLOGIST
+  ONCOLOGIST
+  OPHTHALMOLOGIST
+  ORTHOPEDIC_SURGEON
+  OTOLARYNGOLOGIST
+  PEDIATRICIAN
+  PHYSICAL_MEDICINE_REHABILITATION_PHYSICIAN
+  PLASTIC_SURGEON
+  PSYCHIATRIST
+  PULMONOLOGIST
+  RADIOLOGIST
+  RHEUMATOLOGIST
+  SURGEON
+  UROLOGIST
+  ALLERGIST_IMMUNOLOGIST
+  INFECTIOUS_DISEASE_PHYSICIAN
 }
-
 
 enum HospitalSpeciality {
   SUPER_SPECIALTY
@@ -220,5 +260,5 @@ enum HospitalSpeciality {
   ALLERGY
   ENDOCRINOLOGY
   PLASTIC_SURGERY
-    REHABILITATION_CENTER
+  REHABILITATION_CENTER
 }

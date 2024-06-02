@@ -216,6 +216,9 @@ export class PatientService {
         return "Prescription deleted successfully";
     }
 
+
+    // Helpers
+
     private ismedicationValid(prescriptions){
         const allMedications = [];
         prescriptions.map(prescription => {
