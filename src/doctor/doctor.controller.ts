@@ -69,4 +69,10 @@ export class DoctorController {
         return this.doctorService.divergeAppointments(doctorId, oldDoctorId, newDoctorId, appointmentId);
     }
 
+    @Patch('diverge-appointment/:id')
+    async divergeAppointment(@GetUser('id') doctorId: string, @Body() body: {appointmentId: string, oldDoctorId: string}){
+        const { appointmentId, oldDoctorId } = body;
+        return this.doctorService.divergeAppointment(doctorId, oldDoctorId ,appointmentId);
+    }
+
 }

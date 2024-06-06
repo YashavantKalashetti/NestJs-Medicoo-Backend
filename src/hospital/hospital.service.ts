@@ -125,10 +125,17 @@ export class HospitalService {
     }
 
     async getDoctorAppointments(hospitalId: string, doctorId: string) {
+
+        const {startOfToday, endOfToday} = this.IndianTime();
+    
         const appointments= await this.prismaService.appointment.findMany({
             where: {
-                doctorId: doctorId,
-                hospitalId: hospitalId
+                AND: [
+                    { doctorId},
+                    { hospitalId},
+                    { date: { gte: startOfToday, lt: endOfToday } },
+                    {status: "NORMAL" || "EMERGENCY"}
+                ]
             }
         });
 
@@ -142,7 +149,8 @@ export class HospitalService {
         const appointments = await this.prismaService.appointment.updateMany({
             where:{
                 doctorId: oldDoctorId,
-                hospitalId: hospitalId
+                hospitalId: hospitalId,
+                mode: AppointmentMode.OFFLINE
             },
             data:{
                 doctorId: newDoctorId
@@ -158,6 +166,7 @@ export class HospitalService {
                 id: appointmentId,
                 hospitalId: hospitalId,
                 doctorId: oldDoctorId,
+                mode: AppointmentMode.OFFLINE
             },data:{
                 doctorId: newDoctorId
             }
@@ -165,7 +174,6 @@ export class HospitalService {
         
         return {msg: "Appointment Diverged"};
     }
-
 
     // Patient Services
     async getPatients(hospitalId: string) {
@@ -269,6 +277,7 @@ export class HospitalService {
                     patientId: appointmentDto.patientId,
                     hospitalId: hospitalId,
                     ...appointmentDto,
+                    mode: AppointmentMode.OFFLINE
                 }
             });
     
@@ -280,5 +289,29 @@ export class HospitalService {
         
     }
     
+    async appointmentCompleted(hospitalId: string, appointmentId: string) {
+        const appointment = await this.prismaService.appointment.delete({
+            where:{
+                id: appointmentId,
+                hospitalId: hospitalId
+            }
+        });
+
+        return {msg: "Appointment Completed"};
+    }
+
+    private IndianTime(){
+        const indianTime = new Date();
+        indianTime.setUTCHours(indianTime.getUTCHours() + 5); // Add 5 hours for Indian Standard Time
+        indianTime.setUTCMinutes(indianTime.getUTCMinutes() + 30); // Add additional 30 minutes for Indian Standard Time
     
+        const startOfToday = new Date(indianTime);
+        startOfToday.setUTCHours(0, 0, 0, 0);
+    
+        const endOfToday = new Date(indianTime);
+        endOfToday.setUTCHours(23, 59, 59, 999);
+
+        return {startOfToday, endOfToday};
+    }
+
 }

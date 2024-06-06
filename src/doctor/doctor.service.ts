@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { Doctor, PrescriptionStatus } from '@prisma/client';
+import { AppointmentMode, Doctor, PrescriptionStatus } from '@prisma/client';
 import { CreatePrescriptionDto } from '../dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -37,15 +37,14 @@ export class DoctorService {
     }
 
     async getAppointments(userId: string) {
-        const today = new Date();
-        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+        const {startOfToday, endOfToday} = this.IndianTime();
     
         const appointments = await this.prismaService.appointment.findMany({
             where: {
                 AND: [
                     { doctorId: userId },
-                    { date: { gte: startOfToday, lt: endOfToday } }
+                    { date: { gte: startOfToday, lt: endOfToday } },
+                    { status:  "NORMAL" || "EMERGENCY" }
                 ]
             },
             include: {
@@ -62,7 +61,7 @@ export class DoctorService {
         });
     
         if (!appointments || appointments.length === 0) {
-            return [];
+            return {msg : "No appointments found"};
         }
     
         const allAppointments = appointments.map((app) => {
@@ -173,7 +172,7 @@ export class DoctorService {
 
         }
 
-        const response = await fetch(`${this.config.get('Elastic_Server')}/elasticSearch-reports`, {
+        const response = await fetch(`${this.config.get('Elastic_Server')}/elasticSearch/med-reports`, {
             method: 'POST',
             body: JSON.stringify({
                 patientId,
@@ -243,6 +242,27 @@ export class DoctorService {
                 id: appointmentId,
                 doctorId: oldDoctorId,
                 hospitalId: null,
+                mode: AppointmentMode.OFFLINE
+            },
+            data:{
+                doctorId: newDoctorId
+            }
+        });
+
+        if(!appointment){
+            throw new InternalServerErrorException("Appointment could not be updated");
+        }
+
+        return appointment;
+    }
+
+    async divergeAppointment(doctorId: string, newDoctorId: string, appointmentId: string) {
+        const appointment = await this.prismaService.appointment.update({
+            where:{
+                id: appointmentId,
+                doctorId: doctorId,
+                hospitalId: null,
+                mode: AppointmentMode.ONLINE
             },
             data:{
                 doctorId: newDoctorId
@@ -298,10 +318,13 @@ export class DoctorService {
                     }
                 });
 
-                console.log(elasticEntry.id)
+                const uploadedToCloud = await this.uploadToElasticSerachIndex(attachment, patientId, elasticEntry.id);
 
-                await this.getFileType(attachment, patientId, elasticEntry.id);
-
+                if(!uploadedToCloud){
+                    console.log("Error in uploading to elastic search");
+                }else{
+                    console.log("Uploaded to Elastic Search");
+                }
 
             } catch (error) {
                 console.log(error.message);
@@ -310,22 +333,25 @@ export class DoctorService {
         }));
     }
 
-    private async getFileType(url, patientId, databaseId) {
+    private async uploadToElasticSerachIndex(url, patientId, databaseId) {
         try {
             const splitUrl = url.split('.');
             const fileExtension = splitUrl[splitUrl.length - 1];
+
 
             switch (fileExtension) {
                 case 'pdf':
                 case 'doc':
                 case 'docx':
-                    console.log(fileExtension)
-                    await axios.post(`${this.config.get('Elastic_Server')}/pdfToText`, {
-                        databaseId,
-                        patientId,
-                        url
-                    });
-                    return 'pdf';
+                    {
+                        const response = await axios.post(`${this.config.get('Elastic_Server')}/elasticSearch/pdfToText`, {
+                            databaseId,
+                            patientId,
+                            url
+                        });
+
+                        return response.status >= 400 ? false : true;
+                    }
                 case 'jpg':
                 case 'jpeg':
                 case 'png':
@@ -334,16 +360,18 @@ export class DoctorService {
                 case 'tiff':
                 case 'webp':
                 case 'avif':
-                    console.log(fileExtension)
-                    await axios.post(`${this.config.get('Elastic_Server')}/imageToText`, {
-                        databaseId,
-                        patientId,
-                        url
-                    });
-                    return 'image';
+                    {
+                        const response = await axios.post(`${this.config.get('Elastic_Server')}/elasticSearch/imageToText`, {
+                            databaseId,
+                            patientId,
+                            url
+                        });
+
+                        return response.status >= 400 ? false : true;
+                    }
                 default:
-                    console.log(fileExtension)
-                    return 'unknown';
+                    console.log("FIle Type Not Supported: ",fileExtension);
+                    return false;
             }
             
         } catch (error) {
@@ -351,5 +379,17 @@ export class DoctorService {
         }
     }
 
+    private IndianTime(){
+        const indianTime = new Date();
+        indianTime.setUTCHours(indianTime.getUTCHours() + 5); // Add 5 hours for Indian Standard Time
+        indianTime.setUTCMinutes(indianTime.getUTCMinutes() + 30); // Add additional 30 minutes for Indian Standard Time
+    
+        const startOfToday = new Date(indianTime);
+        startOfToday.setUTCHours(0, 0, 0, 0);
+    
+        const endOfToday = new Date(indianTime);
+        endOfToday.setUTCHours(23, 59, 59, 999);
 
+        return {startOfToday, endOfToday};
+    }
 }

@@ -1,4 +1,6 @@
 import { Provider } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { config } from 'dotenv';
 import Redis from 'ioredis';
 
 export const RedisProvider: Provider = {
@@ -6,7 +8,7 @@ export const RedisProvider: Provider = {
   useFactory: () => {
     return new Redis({
       host: 'localhost',
-      port: 6377,
+      port: config().parsed.REDIS_PORT as unknown as number,
     });
   },
 };

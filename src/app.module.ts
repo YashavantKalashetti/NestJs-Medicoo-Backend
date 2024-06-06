@@ -11,6 +11,7 @@ import { BullModule } from '@nestjs/bull';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CloudinaryService } from './Services';
 import { RedisProvider } from './Services/redisServer';
+import { EmailService } from './Services/email.service';
 
 @Global()
 @Module({
@@ -25,6 +26,6 @@ import { RedisProvider } from './Services/redisServer';
     EventEmitterModule.forRoot({})
   ],
   controllers: [],
-  providers: [AuthModule,PrismaModule,ConfigModule, CloudinaryService, RedisProvider],
+  providers: [AuthModule,PrismaModule,ConfigModule, CloudinaryService, RedisProvider, EmailService],
 })
 export class AppModule {}

@@ -35,6 +35,11 @@ export class PatientController {
         return this.patientService.getAllCurrentMedications(userId);
     }
 
+    @Get('get-medicalReports')
+    async getMedicalReports(@GetUser('id') userId: string){
+        return this.patientService.getMedicalReports(userId);
+    }
+
     @Post('book-emergency-appointment')
     async bookEmergencyAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto){
         return this.patientService.bookAppointment(userId,appointmentDto, AppointmentStatus.EMERGENCY);
@@ -42,8 +47,8 @@ export class PatientController {
 
     @Post('book-appointment')
     async bookAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto){
-        console.log("bookAppointment")
-        console.log(appointmentDto)
+        // const appointmentDate = new Date(appointmentDto.date);
+        // appointmentDto.date = appointmentDate.toISOString();
         return this.patientService.bookAppointment(userId,appointmentDto);
     }
 

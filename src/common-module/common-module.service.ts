@@ -106,7 +106,18 @@ export class CommonModuleService {
             throw new BadRequestException('Speciality must be a valid value given in the enum');
         }
 
-        const hospitals = await this.prismaService.hospital.findMany({
+        let hospitals: any;
+
+        hospitals = await this.redisClient.get(`hospitals:${speciality}`);
+
+        if(hospitals){
+            console.log('Cache Hit')
+            hospitals = JSON.parse(hospitals);
+            hospitals = hospitals.filter(hospital => hospital.speciality === speciality);
+            return hospitals;
+        }
+
+        hospitals = await this.prismaService.hospital.findMany({
             where:{
                 speciality
             }
@@ -121,6 +132,9 @@ export class CommonModuleService {
             delete hospital.latitude;
             delete hospital.longitude;
         });
+
+        await this.redisClient.set(`hospitals:${speciality}`, JSON.stringify(hospitals), 'EX', 60*10);
+        console.log('Cache Miss')
 
         return hospitals;
     }

@@ -45,6 +45,8 @@ model Doctor {
   address             String
   avatar              String?
   consultingFees      Int                  @default(500)
+  availableStartTime  String               @default("19:00")
+  availableEndTime    String               @default("21:00")
   specialization      DoctorSpecialization @default(GENERAL_PRACTITIONER)
   affiliatedHospitals Hospital[]           @relation("DoctorsHospitals")
   totalAppointments   Int                  @default(0)
@@ -193,6 +195,7 @@ enum PrescriptionStatus {
 enum AppointmentStatus {
   NORMAL
   EMERGENCY
+  COMPLETED
   CANCLED
 }
 
