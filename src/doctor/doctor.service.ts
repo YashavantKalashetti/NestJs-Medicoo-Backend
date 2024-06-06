@@ -77,14 +77,20 @@ export class DoctorService {
     }
     
     async getPatientPrescriptionById(patientId: string) {
-        return this.prismaService.prescription.findMany({
+        const prescriptions = await this.prismaService.prescription.findMany({
             where: {
-                patientId
+                patientId,
+                status: PrescriptionStatus.ACTIVE
             },
             include:{
                 medications: true
             }
         });
+
+        const importantPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "IMPORTANT");
+        const normalPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "NORMAL");
+
+        return {importantPrescriptions, normalPrescriptions};
     }
 
     async getPatientMedicationsById(patientId: string) {
@@ -102,13 +108,21 @@ export class DoctorService {
 
     async addPrescriptions(userId: string, patientId: string, prescriptionDto: CreatePrescriptionDto) {
 
-        const {attachments, instructionForOtherDoctor, medicationType, status} = prescriptionDto;
+        const {attachments, instructionForOtherDoctor, prescriptionType, status} = prescriptionDto;
 
         const prescription = await  this.prismaService.prescription.create({
             data: {
-                doctorId: userId,
-                patientId,
-                attachments, instructionForOtherDoctor, medicationType, status
+                attachments, instructionForOtherDoctor, prescriptionType, status,
+                patient:{
+                    connect:{
+                        id: patientId
+                    }
+                },
+                doctor:{
+                    connect:{
+                        id: userId
+                    }
+                }
             }
         });
 
@@ -276,6 +290,26 @@ export class DoctorService {
         return appointment;
     }
 
+    async updateAppointmentTimings(doctorId: string, body: {startTime: string, endTime: string}) {
+        const {startTime, endTime} = body;
+
+        const doctor = await this.prismaService.doctor.update({
+            where:{
+                id: doctorId
+            },
+            data:{
+                availableStartTime: startTime,
+                availableEndTime: endTime
+            }
+        });
+
+        if(!doctor){
+            throw new InternalServerErrorException("Doctor timings could not be updated");
+        }
+
+        return {msg: "Doctor timings updated successfully"};
+    }
+
     // helpers
 
     private calculateAge(dateOfBirth: Date): number {
@@ -312,9 +346,17 @@ export class DoctorService {
             try {
                 const elasticEntry = await this.prismaService.prescriptionAttachementElasticSearch.create({
                     data:{
-                        patientId,
-                        prescriptionId,
-                        url: attachment
+                        url: attachment,
+                        prescription:{
+                            connect:{
+                                id: prescriptionId
+                            }
+                        },
+                        patient:{
+                            connect:{
+                                id: patientId
+                            }
+                        }
                     }
                 });
 
@@ -392,4 +434,5 @@ export class DoctorService {
 
         return {startOfToday, endOfToday};
     }
+    
 }

@@ -20,7 +20,7 @@ export class PatientService {
 
         const appointmentCount = await this.prismaService.appointment.count({
             where: {
-                patientId: userId
+                patientId: userId,
             }
         });
 
@@ -33,19 +33,28 @@ export class PatientService {
         return {patient, appointmentCount, medicationCount};
     }
 
-    async getPrescriptions(userId: string): Promise<Prescription[]>{  
-        return this.prismaService.prescription.findMany({
+    async getPrescriptions(userId: string){  
+        const prescriptions = await this.prismaService.prescription.findMany({
             where: {
-                patientId: userId
+                patientId: userId,
+                status: PrescriptionStatus.ACTIVE
+            },
+            include:{
+                medications: true
             }
         });
+
+        const importantPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "IMPORTANT");
+        const normalPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "NORMAL");
+
+        return {importantPrescriptions, normalPrescriptions};
     }
 
-    async getPrescriptionById(userId: string, prescriptionId: string): Promise<Prescription>{
+    async getPrescriptionById(userId: string, prescriptionId: string){
         const prescription = await this.prismaService.prescription.findFirst({
             where: {
                 id: prescriptionId,
-                patientId: userId
+                patientId: userId,
             },
             include:{
                 medications: true
@@ -56,7 +65,7 @@ export class PatientService {
             throw new BadRequestException("Prescription not found");
         }
 
-        return prescription;
+        return {prescription};
     }
 
     async getAllCurrentMedications(userId: string){
@@ -72,7 +81,7 @@ export class PatientService {
         return this.ismedicationValid(prescriptions);
     }
 
-    async getMedicalReports(patientId: string, search: string=""){
+    async getPatientReports(patientId: string, search: string=""){
         search = search?.trim();
         if(search == "" || search == null){
 
@@ -183,11 +192,12 @@ export class PatientService {
         return {onlineAppointments, offlineAppointments};
     }
 
-    async reviewAppointment(userId: string, appointmentDto: CreateAppointmentDto, rating: number){
+    async reviewAppointment(userId: string, appointmentId: string, appointmentDto: CreateAppointmentDto, rating: number){
 
         const appointment = await this.prismaService.appointment.findFirst({
             where: {
                 AND: [
+                    { id: appointmentId},
                     { patientId: userId },
                     { doctorId: appointmentDto.doctorId }
                 ]
@@ -241,13 +251,17 @@ export class PatientService {
             where: {
                 patientId: userId,
                 status: PrescriptionStatus.INACTIVE
+            },
+            include:{
+                medications: true,
+                doctor: true
             }
         });
 
         return inactivePrescriptions;
     }
 
-    async deletePrescription(userId: string, id: string): Promise<string>{
+    async deletePrescription(userId: string, id: string){
         const deletedPrescription = await this.prismaService.prescription.delete({
             where: {
                 id: id,
@@ -260,7 +274,7 @@ export class PatientService {
             throw new BadRequestException("Prescription not found");
         }
 
-        return "Prescription deleted successfully";
+        return {msg: "Prescription deleted successfully"};
     }
 
     // Helpers
@@ -284,16 +298,16 @@ export class PatientService {
 
     async isDoctorAvailable(doctor, requestedStartTime: Date, requestedEndTime: Date): Promise<boolean> {
     
-    const availableStartTime = new Date(requestedStartTime);
-    const availableEndTime = new Date(requestedEndTime);
+        const availableStartTime = new Date(requestedStartTime);
+        const availableEndTime = new Date(requestedEndTime);
 
-    const doctorStartDateTime = new Date();
-    doctorStartDateTime.setHours(parseInt(doctor.availableStartTime.split(':')[0]), parseInt(doctor.availableStartTime.split(':')[1]), 0, 0);
+        const doctorStartDateTime = new Date();
+        doctorStartDateTime.setHours(parseInt(doctor.availableStartTime.split(':')[0]), parseInt(doctor.availableStartTime.split(':')[1]), 0, 0);
 
-    const doctorEndDateTime = new Date();
-    doctorEndDateTime.setHours(parseInt(doctor.availableEndTime.split(':')[0]), parseInt(doctor.availableEndTime.split(':')[1]), 0, 0);
+        const doctorEndDateTime = new Date();
+        doctorEndDateTime.setHours(parseInt(doctor.availableEndTime.split(':')[0]), parseInt(doctor.availableEndTime.split(':')[1]), 0, 0);
 
-    return availableStartTime >= doctorStartDateTime && availableEndTime <= doctorEndDateTime;
+        return availableStartTime >= doctorStartDateTime && availableEndTime <= doctorEndDateTime;
     }
     
     async isSlotAvailable(doctor: Doctor) {
@@ -302,12 +316,7 @@ export class PatientService {
         indianTime.setUTCHours(indianTime.getUTCHours() + 5); // Add 5 hours for Indian Standard Time
         indianTime.setUTCMinutes(indianTime.getUTCMinutes() + 30); // Add additional 30 minutes for Indian Standard Time
     
-        // Calculate start and end of today in Indian time
-        const startOfToday = new Date(indianTime);
-        startOfToday.setUTCHours(0, 0, 0, 0); // Set to midnight
-    
-        const endOfToday = new Date(indianTime);
-        endOfToday.setUTCHours(23, 59, 59, 999); // Set to end of the day
+        const {startOfToday, endOfToday} = this.IndianTime();
     
         // Fetch existing appointments for the doctor for today
         const existingAppointments = await this.prismaService.appointment.findMany({
@@ -339,7 +348,7 @@ export class PatientService {
     
         // Calculate end time of last appointment
         const lastAppointmentEndTime = new Date(existingAppointments[0].date);
-        lastAppointmentEndTime.setMinutes(lastAppointmentEndTime.getMinutes() + 20); // Assuming appointments are 20 minutes long
+        lastAppointmentEndTime.setMinutes(lastAppointmentEndTime.getMinutes() + 15); // Assuming appointments are 20 minutes long
     
         // If the last appointment ends before the doctor's end time, return its end time
         if (lastAppointmentEndTime <= doctorEndDateTime) {
@@ -362,6 +371,5 @@ export class PatientService {
 
         return {startOfToday, endOfToday};
     }
-    
     
 }

@@ -59,6 +59,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 
 # docker
+docker-compose1.yml
 docker-compose.yml
 .dockerignore
 docker*

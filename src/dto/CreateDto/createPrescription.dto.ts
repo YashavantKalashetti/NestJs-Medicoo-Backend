@@ -1,4 +1,4 @@
-import { Medication, MedicationType, PrescriptionStatus } from "@prisma/client";
+import { Medication, PrescriptionType, PrescriptionStatus } from "@prisma/client";
 import { IsArray, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { CreateMedicationDto } from "./createMedication.dto";
 
@@ -12,7 +12,7 @@ export class CreatePrescriptionDto{
     instructionForOtherDoctor: string;
 
     @IsOptional()
-    medicationType: MedicationType;
+    prescriptionType: PrescriptionType;
 
     @IsOptional()
     status: PrescriptionStatus;

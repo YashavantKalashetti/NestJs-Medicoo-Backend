@@ -75,4 +75,9 @@ export class DoctorController {
         return this.doctorService.divergeAppointment(doctorId, oldDoctorId ,appointmentId);
     }
 
+    @Patch('update-appointment-timings')
+    async updateAppointmentTimings(@GetUser('id') doctorId: string, @Body() body: {startTime: string, endTime: string}){
+        return this.doctorService.updateAppointmentTimings(doctorId, body);
+    }
+
 }

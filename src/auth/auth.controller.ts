@@ -3,8 +3,6 @@ import { AuthService } from './auth.service';
 import { SigninDto, PatientSignupDto, DoctorSignupDto, HospitalSignupDto } from '../dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService, multerOptions } from 'src/Services';
-import { GetUser } from './customDecorator';
-import { HospitalSpeciality } from '@prisma/client';
 
 @UseInterceptors(ClassSerializerInterceptor)  
 @Controller('auth')

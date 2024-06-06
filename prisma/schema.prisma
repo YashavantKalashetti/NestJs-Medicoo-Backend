@@ -88,7 +88,7 @@ model Prescription {
   medications               Medication[]
   attachments               String[]
   instructionForOtherDoctor String?
-  medicationType            MedicationType             @default(NORMAL)
+  prescriptionType            PrescriptionType             @default(NORMAL)
   status                    PrescriptionStatus         @default(ACTIVE)
   prescriptionAttachementElasticSearch   PrescriptionAttachementElasticSearch[]
   createdAt                 DateTime                   @default(now())
@@ -150,34 +150,10 @@ model PrescriptionAttachementElasticSearch {
   @@map("prescription_attachments")
 }
 
-// model PatientMedicalDetails {
-//   id        String   @id @default(uuid())
-//   patient   Patient  @relation(fields: [patientId], references: [id])
-//   patientId String @unique
-//   age      Int
-//   gender   Int
-//   height    Float
-//   weight    Float
-//   bloodGroup String
-//   allergies String[]
-//   Glucose  Float
-//   BloodPressure Int
-//   BMI Float @map("weight/height^2")
-//   systolic  Int
-//   diastolic Int
-//   hypertension Int
-//   diabetes Int
-//   smoking Int
-
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-
-//   @@map("patient_medical_details")
-// }
 
 // Enums used in the schema
 
-enum MedicationType {
+enum PrescriptionType {
   NORMAL
   IMPORTANT
 }

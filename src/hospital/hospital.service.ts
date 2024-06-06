@@ -41,6 +41,20 @@ export class HospitalService {
         });
     }
 
+    async getEmergencyAppointments(hospitalId: string) {
+        const {startOfToday, endOfToday} = this.IndianTime();
+    
+        return this.prismaService.appointment.findMany({
+            where: {
+                AND: [
+                    { hospitalId },
+                    { date: { gte: startOfToday, lt: endOfToday } },
+                    {status: "EMERGENCY"}
+                ]
+            }
+        });
+    }
+
     // Doctor Services
 
     async getDoctors(hospitalId: string) {
@@ -290,7 +304,7 @@ export class HospitalService {
     }
     
     async appointmentCompleted(hospitalId: string, appointmentId: string) {
-        const appointment = await this.prismaService.appointment.delete({
+        await this.prismaService.appointment.delete({
             where:{
                 id: appointmentId,
                 hospitalId: hospitalId
@@ -299,6 +313,8 @@ export class HospitalService {
 
         return {msg: "Appointment Completed"};
     }
+
+    // Helpers
 
     private IndianTime(){
         const indianTime = new Date();

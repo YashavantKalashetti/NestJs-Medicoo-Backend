@@ -22,6 +22,11 @@ export class HospitalController {
         return this.hospitalService.getHospitalAppointments(hospitalId);
     }
 
+    @Get('emergency-appointments')
+    async getEmergencyAppointments(@GetUser('id') hospitalId: string){
+        return this.hospitalService.getEmergencyAppointments(hospitalId);
+    }
+
     // Doctor routes
     
     @Get('/doctors')
@@ -83,7 +88,6 @@ export class HospitalController {
     async bookAppointment(@GetUser('id') hospitalId: string, @Body() appointmentDto: CreateAppointmentDto){
         return this.hospitalService.bookAppointment(hospitalId, appointmentDto);
     }
-
 
     @Post('register-patient-to-hospital')
     async registerPatientToHospital(@GetUser('id') hospitalId: string, @Body() body: {patientId: string}){

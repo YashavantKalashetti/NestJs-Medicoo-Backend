@@ -36,14 +36,14 @@ export class PatientController {
     }
 
     @Get('get-medicalReports')
-    async getMedicalReports(@GetUser('id') userId: string){
-        return this.patientService.getMedicalReports(userId);
+    async getPatientReports(@GetUser('id') userId: string){
+        return this.patientService.getPatientReports(userId);
     }
 
-    @Post('book-emergency-appointment')
-    async bookEmergencyAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto){
-        return this.patientService.bookAppointment(userId,appointmentDto, AppointmentStatus.EMERGENCY);
-    }
+    // @Post('book-emergency-appointment')
+    // async bookEmergencyAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto){
+    //     return this.patientService.bookAppointment(userId,appointmentDto, AppointmentStatus.EMERGENCY);
+    // }
 
     @Post('book-appointment')
     async bookAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto){
@@ -57,9 +57,9 @@ export class PatientController {
         return this.patientService.getAppointments(userId);
     }
 
-    @Post('appointment-review')
-    async reviewAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto, @Body('rating') rating: number){
-        return this.patientService.reviewAppointment(userId,appointmentDto, rating);
+    @Post('appointment-review/:id')
+    async reviewAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto, @Body('rating') rating: number, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) appointmentId: string){
+        return this.patientService.reviewAppointment(userId,appointmentId, appointmentDto, rating);
     }
 
     @Get('inactive-prescriptions')
@@ -69,7 +69,7 @@ export class PatientController {
 
     @HttpCode(HttpStatus.NO_CONTENT)
     @Delete('inactive-prescription/:id')
-    async deletePrescription(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) id: string):Promise<string>{
+    async deletePrescription(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) id: string){
         return this.patientService.deletePrescription(userId, id);
     }
 }
