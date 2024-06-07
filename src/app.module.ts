@@ -10,12 +10,12 @@ import { CpuIntensiveTasksModule } from './cpu-intensive-tasks/cpu-intensive-tas
 import { BullModule } from '@nestjs/bull';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CloudinaryService } from './Services';
-import { RedisProvider } from './Services/redisServer';
 import { EmailService } from './Services/email.service';
+import { RedisModule } from './redis/redis.module';
 
 @Global()
 @Module({
-  imports: [AuthModule, PrismaModule, PatientModule, DoctorModule, HospitalModule, CommonModuleModule, CpuIntensiveTasksModule,
+  imports: [AuthModule, PrismaModule, PatientModule, DoctorModule, HospitalModule, CommonModuleModule, CpuIntensiveTasksModule,RedisModule,
     ConfigModule.forRoot({isGlobal: true}),
     BullModule.forRoot({
       redis: {
@@ -23,9 +23,10 @@ import { EmailService } from './Services/email.service';
         port: 6379,
       },
     }),
-    EventEmitterModule.forRoot({})
+    EventEmitterModule.forRoot({}),
+    RedisModule
   ],
   controllers: [],
-  providers: [AuthModule,PrismaModule,ConfigModule, CloudinaryService, RedisProvider, EmailService],
+  providers: [AuthModule,PrismaModule,ConfigModule, CloudinaryService, EmailService],
 })
 export class AppModule {}

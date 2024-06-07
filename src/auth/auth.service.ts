@@ -42,6 +42,7 @@ export class AuthService {
 
     async patientSignup(patientSignupDto: PatientSignupDto){
         try {
+            patientSignupDto.dob = new Date(patientSignupDto.dob);
             const hashedPassword = await argon2.hash(patientSignupDto.password);
             const user = await this.prismaService.patient.create({
                 data:{
@@ -112,7 +113,7 @@ export class AuthService {
                 }
             }
             console.log(error.message)
-            throw error;
+            return  {msg: "Doctor could not be created" , error: error.message}
         }
     }   
 

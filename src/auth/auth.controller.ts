@@ -19,7 +19,6 @@ export class AuthController {
     @HttpCode(HttpStatus.CREATED)
     @Post('patient/signup')
     async patientSignup(@Body() patientSignupDto: PatientSignupDto){
-        patientSignupDto.dob = new Date(patientSignupDto.dob);
         return this.authService.patientSignup(patientSignupDto);
     }
 

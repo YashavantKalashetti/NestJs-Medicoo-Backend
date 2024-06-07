@@ -10,6 +10,6 @@ async function bootstrap() {
   app.useGlobalPipes( new ValidationPipe({ whitelist: true}));
   app.use(cookieParser());
   app.setGlobalPrefix('api/v1')
-  await app.listen(3030);
+  await app.listen(3070);
 }
 bootstrap();

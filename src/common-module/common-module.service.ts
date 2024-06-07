@@ -3,10 +3,11 @@ import { Doctor, DoctorSpecialization, Hospital, HospitalSpeciality } from '@pri
 import { UserEntity } from "../dto/UserEntity.dto";
 import { PrismaService } from '../prisma/prisma.service';
 import { Redis } from 'ioredis';
-
+import { RedisClientType } from 'redis';
+import { RedisProvider } from 'src/redis/redis.provider';
 @Injectable()
 export class CommonModuleService {
-    constructor(private prismaService:PrismaService, @Inject('REDIS_CLIENT') private readonly redisClient: Redis){}
+    constructor(private prismaService:PrismaService, private readonly redisProvider: RedisProvider){}
 
     async getDetailsOfPlatform(){
         const doctorsCount = await this.prismaService.doctor.count();
@@ -54,7 +55,7 @@ export class CommonModuleService {
     async getDoctors(){
         try {
             let doctors: any;
-            doctors = await this.redisClient.get('doctors');
+            doctors = await this.redisProvider.getClient().get('doctors');
             if(doctors){
                 console.log('Cache Hit')
                 doctors = JSON.parse(doctors);
@@ -67,18 +68,18 @@ export class CommonModuleService {
                 delete doctor.password;
             });
             
-            this.redisClient.set('doctors', JSON.stringify(doctors), 'EX', 60*10);
+            this.redisProvider.getClient().set('doctors', JSON.stringify(doctors));
             return doctors;
         } catch (error) {
             console.log(error.meassage)
-            throw new BadRequestException('Error getting doctors');
+            return {error: error.message}
         }
     }
     
     async getHospitals(){
         let hospitals: any;
 
-        hospitals = await this.redisClient.get('hospitals')
+        hospitals = await this.redisProvider.getClient().get('hospitals');
 
 
         if(hospitals){
@@ -94,7 +95,7 @@ export class CommonModuleService {
             delete hospital.password;
         });
 
-        await this.redisClient.set('hospitals', JSON.stringify(hospitals), 'EX', 60*10);
+        await this.redisProvider.getClient().set('hospitals', JSON.stringify(hospitals), );
         console.log('Cache Miss')
 
         return hospitals;
@@ -108,7 +109,7 @@ export class CommonModuleService {
 
         let hospitals: any;
 
-        hospitals = await this.redisClient.get(`hospitals:${speciality}`);
+        hospitals = await this.redisProvider.getClient().get(`hospitals:${speciality}`);
 
         if(hospitals){
             console.log('Cache Hit')
@@ -133,7 +134,7 @@ export class CommonModuleService {
             delete hospital.longitude;
         });
 
-        await this.redisClient.set(`hospitals:${speciality}`, JSON.stringify(hospitals), 'EX', 60*10);
+        await this.redisProvider.getClient().set(`hospitals:${speciality}`, JSON.stringify(hospitals));
         console.log('Cache Miss')
 
         return hospitals;
