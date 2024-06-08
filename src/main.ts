@@ -14,5 +14,6 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1')
   const configService: ConfigService = app.get(ConfigService);
   await app.listen(configService.get('PORT'));
+  app.use(csurf());
 }
 bootstrap();
