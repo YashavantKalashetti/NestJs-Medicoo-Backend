@@ -52,6 +52,22 @@ export class AuthService {
                     aadharNumber: patientSignupDto.aadharNumber.toString()
                 }
             });
+
+            if(!user) throw new ForbiddenException('User could not be created');
+
+            await this.prismaService.medicalDetails.create({
+                data:{
+                    patientId: user.id,
+                    bloodGroup: '', // default or initial value
+                    height: 0, // default or initial value
+                    weight: 0, // default or initial value
+                    allergies: [], // default or initial value
+                    medicalHistory: [], // default or initial value
+                    systolic: 0, // default or initial value
+                    diastolic: 0, // default or initial value
+                }
+            })
+
             const User = new UserEntity({...user});
             return user;
         } catch (error) {
@@ -60,7 +76,7 @@ export class AuthService {
                     throw new ForbiddenException("Credentials taken");
                 }
             }
-            console.log(error.message)
+            // console.log(error.message)
             throw error;
         }
     }

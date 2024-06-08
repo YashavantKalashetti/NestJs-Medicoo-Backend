@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, HttpCode, HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, HttpCode, HttpStatus, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Appointment, AppointmentStatus, Doctor, Patient, Prescription, PrescriptionStatus, Prisma } from '@prisma/client';
 import { CreateAppointmentDto } from '../dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -15,22 +15,40 @@ export class PatientService {
         const patient = await this.prismaService.patient.findUnique({
             where: {
                 id: userId
-            }
+            },
         });
 
-        const appointmentCount = await this.prismaService.appointment.count({
+        const appointmentCount = await this.prismaService.appointment.findMany({
             where: {
                 patientId: userId,
             }
         });
 
-        const medicationCount = await this.prismaService.prescription.count({
+        const prescriptions = await this.prismaService.prescription.findMany({
+            where: {
+                patientId: userId
+            },select:{
+                medications: true
+            }
+        });
+
+        const medications = prescriptions.map(prescription => prescription.medications);
+
+        const medicalDetails = await this.prismaService.medicalDetails.findFirst({
             where: {
                 patientId: userId
             }
         });
 
-        return {patient, appointmentCount, medicationCount};
+        const reports = await this.prismaService.prescriptionAttachementElasticSearch.findMany({
+            where:{
+                patientId: userId
+            }
+        });
+
+        delete patient.password;
+
+        return {patient, appointmentCount, prescriptions, medications, medicalDetails, reports};
     }
 
     async getPrescriptions(userId: string){  
@@ -275,6 +293,104 @@ export class PatientService {
         }
 
         return {msg: "Prescription deleted successfully"};
+    }
+
+    async updateParent(userId: string,parentId: string){
+            try {
+              if (!parentId) {
+                throw new Error('Parent ID is required');
+              }
+        
+              // Check if the parent exists
+              const parentExists = await this.prismaService.patient.findUnique({
+                where: { id: parentId },
+              });
+        
+              if (!parentExists) {
+                throw new Error('Parent not found');
+              }
+        
+              // Update the patient with the parentId
+              const patient = await this.prismaService.patient.update({
+                where: { id: userId },
+                data: {
+                  parentId: parentId,
+                },
+              });
+        
+              return {msg: 'Parent Access updated successfully'};
+            } catch (error) {
+              console.error(error.message);
+                throw new ForbiddenException('Failed to update parent');
+            }
+    
+    }
+
+    async getChildrens(userId: string){
+        const children = await this.prismaService.patient.findMany({
+            where: {
+                parentId: userId
+            },
+            select:{
+                id: true,
+                name: true,
+                email: true,
+                dob: true,
+                aadharNumber: true,
+                gender: true,
+            }
+        });
+
+        return children;
+    }
+
+    async getChildDetails(userId: string, patientId: string){
+            
+        const children = await this.prismaService.patient.findUnique({
+            where: {
+                id: patientId,
+                parentId: userId
+            },select:{
+                id: true,
+                name: true,
+                email: true,
+                dob: true,
+                aadharNumber: true,
+                contactNumber: true,
+                prescriptions: {
+                    select:{
+                        id: true,
+                        status: true,
+                        prescriptionType: true,
+                        medications: {
+                            select:{
+                                medicine: true,
+                                dosage: true,
+                                instruction: true,
+                                validTill: true,
+                            }
+                        }
+                    }
+                },
+                medicalDetails:{
+                    select:{
+                        bloodGroup: true,
+                        height: true,
+                        weight: true,
+                        allergies: true,
+                        medicalHistory: true,
+                        systolic: true,
+                        diastolic: true,
+                    }
+                }
+            }
+        });
+
+        if(!children){
+            throw new NotFoundException("Child not found");
+        }
+    
+        return {children};
     }
 
     // Helpers

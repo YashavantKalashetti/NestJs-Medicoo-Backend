@@ -25,13 +25,35 @@ model Patient {
   address                  String
   prescriptions            Prescription[]
   appointments             Appointment[]
+  medicalDetails           MedicalDetails?
   hospitalsRegistered      Hospital[]                 @relation("PatientHospitals")
   prescriptionAttachementElasticSearch PrescriptionAttachementElasticSearch[]
-  // medicalDetails PatientMedicalDetails?
+  parentId                 String?
+  parent                   Patient?                   @relation("PatientChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children                 Patient[]                  @relation("PatientChildren")
   createdAt                DateTime                   @default(now())
   updatedAt                DateTime                   @updatedAt
 
   @@map("patients")
+}
+
+model MedicalDetails{
+  id                       String                     @id @default(uuid())
+  patient                  Patient                    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId                String                     @unique
+  bloodGroup               String
+  height                   Float
+  weight                   Float
+  allergies                String[]
+  medicalHistory           String[]
+  systolic                 Int
+  diastolic                Int
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+
+  @@unique([id, patientId], name: "MedicalDetailsUniqueConstraint")
+  @@map("medical_details")
+
 }
 
 model Doctor {

@@ -1,6 +1,7 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post, Redirect } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Redirect } from '@nestjs/common';
 import { CommonModuleService } from './common-module.service';
 import { DoctorSpecialization, Hospital, HospitalSpeciality } from '@prisma/client';
+import { ValidateEnumPipe } from 'src/auth/customDecorator';
 
 @Controller('common-module')
 export class CommonModuleController {
@@ -29,23 +30,13 @@ export class CommonModuleController {
     }
 
     @Get('get-doctors')
-    async getDoctors(): Promise<any[]>{
-        return this.commonModuleService.getDoctors();
+    async getDoctors(@Query('speciality', new ValidateEnumPipe(DoctorSpecialization)) speciality: DoctorSpecialization){
+        return this.commonModuleService.getDoctors(speciality);
     }
 
     @Get('get-hospitals')
-    async getHospitals(){
-        return this.commonModuleService.getHospitals();
-    }
-
-    @Get('get-doctorBySpecialization/:specialization')
-    async getDoctorBySpecialization(@Param('specialization') specialization: DoctorSpecialization){
-        return this.commonModuleService.getDoctorBySpecialization(specialization);
-    }
-
-    @Get('get-hospitalBySpeciality/:speciality')
-    async getHospitalBySpeciality(@Param('speciality') speciality: HospitalSpeciality){
-        return this.commonModuleService.getHospitalBySpeciality(speciality);
+    async getHospitals(@Query('speciality', new ValidateEnumPipe(HospitalSpeciality)) speciality: HospitalSpeciality){
+        return this.commonModuleService.getHospitals(speciality);
     }
 
     @Get('get-doctor/:id')

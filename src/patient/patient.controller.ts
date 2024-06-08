@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AppointmentStatus, Patient, Prescription } from '@prisma/client';
 import { GetUser, Roles } from '../auth/customDecorator';
@@ -72,4 +72,21 @@ export class PatientController {
     async deletePrescription(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) id: string){
         return this.patientService.deletePrescription(userId, id);
     }
+
+    @Patch('update-parentAccess')
+    async updateParentAccess(@GetUser('id') userId: string, @Body() body: any){
+        return this.patientService.updateParent(userId, body.parentId);
+    }
+
+    @Get('get-childrens')
+    async getChild(@GetUser('id') userId: string){
+        return this.patientService.getChildrens(userId);
+    }
+
+    @Get('get-childDetails/:id')
+    async getChildDetails(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) patientId: string){
+        return this.patientService.getChildDetails(userId, patientId);
+    }
+
+
 }

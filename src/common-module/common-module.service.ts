@@ -5,6 +5,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Redis } from 'ioredis';
 import { RedisClientType } from 'redis';
 import { RedisProvider } from 'src/redis/redis.provider';
+import exp from 'constants';
+import e from 'express';
 @Injectable()
 export class CommonModuleService {
     constructor(private prismaService:PrismaService, private readonly redisProvider: RedisProvider){}
@@ -52,117 +54,68 @@ export class CommonModuleService {
         
     }
 
-    async getDoctors(){
+    async getDoctors(speciality: DoctorSpecialization){
         try {
-            let doctors: any;
-            doctors = await this.redisProvider.getClient().get('doctors');
-            if(doctors){
-                console.log('Cache Hit')
-                doctors = JSON.parse(doctors);
-                return doctors;
+
+            // console.log("Speciality: ", speciality)
+            const cacheKey = speciality ? `doctorsSpeciality:${speciality}` : 'doctors';
+
+            const cachedData = await this.redisProvider.getClient().get(cacheKey);
+            if(cachedData){
+                return {doctors: JSON.parse(cachedData)};
             }
-            doctors = await this.prismaService.doctor.findMany({
+
+            const doctors = await this.prismaService.doctor.findMany({
+                where:{
+                    specialization: speciality || undefined
+                },
+                orderBy:{
+                    rating: 'desc'
+                }
             });
 
             doctors.forEach(doctor => {
                 delete doctor.password;
             });
             
-            this.redisProvider.getClient().set('doctors', JSON.stringify(doctors));
-            return doctors;
+            await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify(doctors));
+            
+            return {doctors};
         } catch (error) {
             console.log(error.meassage)
             return {error: error.message}
         }
     }
     
-    async getHospitals(){
-        let hospitals: any;
-
-        hospitals = await this.redisProvider.getClient().get('hospitals');
-
-
-        if(hospitals){
-            console.log('Cache Hit')
-            hospitals = JSON.parse(hospitals);
-            return hospitals;
-        }
-
-        hospitals = await this.prismaService.hospital.findMany({
-        });
-
-        hospitals.forEach(hospital => {
-            delete hospital.password;
-        });
-
-        await this.redisProvider.getClient().set('hospitals', JSON.stringify(hospitals), );
-        console.log('Cache Miss')
-
-        return hospitals;
-    }
-
-    async getHospitalBySpeciality(speciality: HospitalSpeciality){
-
-        if(speciality && !HospitalSpeciality[speciality]){
-            throw new BadRequestException('Speciality must be a valid value given in the enum');
-        }
+    async getHospitals(speciality: HospitalSpeciality){
 
         let hospitals: any;
 
-        hospitals = await this.redisProvider.getClient().get(`hospitals:${speciality}`);
+        const cacheKey = speciality ? `hospitalsSpeciality:${speciality}` : 'hospitals';
 
-        if(hospitals){
-            console.log('Cache Hit')
-            hospitals = JSON.parse(hospitals);
-            hospitals = hospitals.filter(hospital => hospital.speciality === speciality);
-            return hospitals;
+        // Check if data is cached
+        const cachedData = await this.redisProvider.getClient().get(cacheKey);
+        if (cachedData) {
+            // console.log('Cache Hit');
+            return {hospitals :JSON.parse(cachedData)};
         }
 
         hospitals = await this.prismaService.hospital.findMany({
             where:{
-                speciality
+                speciality: speciality || undefined,
             }
         });
-
-        if (!hospitals) {
-            throw new BadRequestException('Hospital not found');
-        }
 
         hospitals.forEach(hospital => {
             delete hospital.password;
-            delete hospital.latitude;
-            delete hospital.longitude;
         });
 
-        await this.redisProvider.getClient().set(`hospitals:${speciality}`, JSON.stringify(hospitals));
-        console.log('Cache Miss')
+        // console.log('Cache Miss')
+        
+        await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify(hospitals));
+        
 
-        return hospitals;
-    }
-
-    async getDoctorBySpecialization(specialization: DoctorSpecialization){
-
-        if(specialization && !DoctorSpecialization[specialization]){
-            throw new BadRequestException('Specialization must be a valid value given in the enum');
-        }
-
-        const doctors = await this.prismaService.doctor.findMany({
-            where: {
-                specialization
-            }
-        });
-
-        if (!doctors) {
-            throw new BadRequestException('Doctors not found');
-        }
-
-        doctors.forEach(doctor => {
-            delete doctor.password;
-            delete doctor.createdAt;
-            delete doctor.updatedAt;
-        });
-
-        return doctors;
+        return {hospitals};
     }
 
     async getDoctorById(id: string){
@@ -190,11 +143,11 @@ export class CommonModuleService {
         }
 
         delete doctor.password;
-        return doctor;
+        return {doctor};
     }
 
     async getHospitalById(id: string){
-        const hospital = await this.prismaService.hospital.findMany({
+        const hospital = await this.prismaService.hospital.findUnique({
             where:{
                 id
             },
@@ -217,7 +170,9 @@ export class CommonModuleService {
             throw new BadRequestException('Hospital not found');
         }
 
-        return hospital;
+        delete hospital.password;
+
+        return {hospital};
     }
 
 }
