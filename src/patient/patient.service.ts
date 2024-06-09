@@ -18,6 +18,10 @@ export class PatientService {
             },
         });
 
+        if(!patient){
+            throw new NotFoundException("Not found");
+        }
+
         const appointmentCount = await this.prismaService.appointment.findMany({
             where: {
                 patientId: userId,
@@ -40,11 +44,7 @@ export class PatientService {
             }
         });
 
-        const reports = await this.prismaService.prescriptionAttachementElasticSearch.findMany({
-            where:{
-                patientId: userId
-            }
-        });
+        const reports = await this.getPatientReports(userId , "");
 
         delete patient.password;
 
@@ -99,7 +99,7 @@ export class PatientService {
         return this.ismedicationValid(prescriptions);
     }
 
-    async getPatientReports(patientId: string, search: string=""){
+    async getPatientReports(patientId: string, search: string){
         search = search?.trim();
         if(search == "" || search == null){
 
@@ -111,7 +111,7 @@ export class PatientService {
 
             const urls = attachments.map(attachment => attachment.url);
 
-            return urls;
+            return {urls};
 
         }
 
@@ -144,7 +144,7 @@ export class PatientService {
         
         const urls = attachments.map(attachment => attachment.url);
 
-        return urls;
+        return {urls};
     }
 
     async bookAppointment(userId: string, appointmentDto: CreateAppointmentDto, status?: AppointmentStatus){
@@ -241,7 +241,6 @@ export class PatientService {
                 id: appointment.doctorId
             },
         });
-
   
         const updatedRating = ((doctor.rating || 0) * (doctor.totalAppointments || 0) + rating) / ((doctor.totalAppointments || 0) + 1);
 
@@ -257,14 +256,10 @@ export class PatientService {
             }
         });
 
-        if(!updatedDoctor){
-            throw new InternalServerErrorException("Doctor not updated");
-        }
-
-        return "Doctor reviewed successfully";
+        return { msg : "Doctor reviewed successfully" };
     }
 
-    async inactivePrescriptions(userId: string): Promise<Prescription[]>{
+    async inactivePrescriptions(userId: string){
         const inactivePrescriptions = await this.prismaService.prescription.findMany({
             where: {
                 patientId: userId,
@@ -276,7 +271,7 @@ export class PatientService {
             }
         });
 
-        return inactivePrescriptions;
+        return {inactivePrescriptions};
     }
 
     async deletePrescription(userId: string, id: string){
@@ -292,38 +287,37 @@ export class PatientService {
             throw new BadRequestException("Prescription not found");
         }
 
-        return {msg: "Prescription deleted successfully"};
+        return { msg: "Prescription deleted successfully" };
     }
 
     async updateParent(userId: string,parentId: string){
-            try {
-              if (!parentId) {
-                throw new Error('Parent ID is required');
-              }
-        
-              // Check if the parent exists
-              const parentExists = await this.prismaService.patient.findUnique({
-                where: { id: parentId },
-              });
-        
-              if (!parentExists) {
-                throw new Error('Parent not found');
-              }
-        
-              // Update the patient with the parentId
-              const patient = await this.prismaService.patient.update({
-                where: { id: userId },
-                data: {
-                  parentId: parentId,
-                },
-              });
-        
-              return {msg: 'Parent Access updated successfully'};
-            } catch (error) {
-              console.error(error.message);
-                throw new ForbiddenException('Failed to update parent');
+        try {
+            if (!parentId) {
+            throw new Error('Parent ID is required');
             }
     
+            // Check if the parent exists
+            const parentExists = await this.prismaService.patient.findUnique({
+            where: { id: parentId },
+            });
+    
+            if (!parentExists) {
+            throw new Error('Parent not found');
+            }
+    
+            // Update the patient with the parentId
+            const patient = await this.prismaService.patient.update({
+            where: { id: userId },
+            data: {
+                parentId: parentId,
+            },
+            });
+    
+            return {msg: 'Parent Access updated successfully'};
+        } catch (error) {
+            console.error(error.message);
+            throw new ForbiddenException('Failed to update parent');
+        }
     }
 
     async getChildrens(userId: string){

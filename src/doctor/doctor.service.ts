@@ -10,6 +10,7 @@ export class DoctorService {
     constructor(private prismaService: PrismaService,private config: ConfigService) {}
 
     async getMyDetails_Doctor(userId: string) {
+
         const doctor = await this.prismaService.doctor.findUnique({
             where: {
                 id: userId
@@ -26,14 +27,23 @@ export class DoctorService {
             },
         });
 
-        const appointmentCount = await this.prismaService.appointment.count({
+        if(!doctor){
+            throw new InternalServerErrorException("Doctor not found");
+        }
+
+        const appointments = await this.prismaService.appointment.findMany({
             where: {
                 patientId: userId
-            }
+            },
         });
 
+        const onlineAppointments = appointments.filter(appointment => appointment.mode === "ONLINE");
+        const offlineAppointments = appointments.filter(appointment => appointment.mode === "OFFLINE");
+
+        const registeredHospitals = doctor.affiliatedHospitals.map(hospital => hospital);
+
         delete doctor.password;
-        return {doctor,appointmentCount};
+        return {doctor, onlineAppointments, offlineAppointments, registeredHospitals};
     }
 
     async getAppointments(userId: string) {

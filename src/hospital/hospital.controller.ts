@@ -90,8 +90,8 @@ export class HospitalController {
     }
 
     @Post('register-patient-to-hospital')
-    async registerPatientToHospital(@GetUser('id') hospitalId: string, @Body() body: {patientId: string}){
-        return this.hospitalService.registerPatientToHospital(hospitalId, body);
+    async registerPatientToHospital(@GetUser('id') hospitalId: string, @Body('patientId') patientId: string){
+        return this.hospitalService.registerPatientToHospital(hospitalId, patientId);
     }
 
 
