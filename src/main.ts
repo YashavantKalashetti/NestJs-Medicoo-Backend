@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import * as csurf from 'csurf';
 import * as cookieParser from 'cookie-parser';
 import { ConfigService } from '@nestjs/config';
+import { AllExceptionsFilter } from './auth/customDecorator/AllExceptionFilters';
 
 
 async function bootstrap() {
@@ -13,7 +14,8 @@ async function bootstrap() {
   app.use(cookieParser());
   app.setGlobalPrefix('api/v1')
   const configService: ConfigService = app.get(ConfigService);
+  // app.useGlobalFilters(new AllExceptionsFilter());
+  app.use(csurf({cookie: true}));
   await app.listen(configService.get('PORT'));
-  app.use(csurf());
 }
 bootstrap();

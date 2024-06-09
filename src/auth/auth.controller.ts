@@ -1,14 +1,24 @@
-import { Body, ClassSerializerInterceptor, Controller, HttpCode, HttpStatus, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { Body, ClassSerializerInterceptor, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { AuthService, ROLES } from './auth.service';
 import { SigninDto, PatientSignupDto, DoctorSignupDto, HospitalSignupDto } from '../dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService, multerOptions } from 'src/Services';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from './JwtStrategy';
+import { Roles } from './customDecorator';
 
 @UseInterceptors(ClassSerializerInterceptor)  
 @Controller('auth')
 export class AuthController {
 
     constructor(private authService: AuthService, private cloudinaryService: CloudinaryService){}
+
+    @Roles([ROLES.DOCTOR, ROLES.PATIENT, ROLES.HOSPITAL])
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Get('get-csrf-token')
+    async getCsrfToken(@Req() req){
+        return {csrfToken: req.csrfToken};
+    }
 
     @HttpCode(HttpStatus.OK)
     @Post('patient/signin')
