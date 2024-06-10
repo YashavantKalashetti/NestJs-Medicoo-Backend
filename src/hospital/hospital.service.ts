@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { AppointmentMode, Hospital } from '@prisma/client';
+import { AppointmentMode, DoctorSpecialization, Hospital } from '@prisma/client';
 import { CreateAppointmentDto, PatientSignupDto } from 'src/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -169,6 +169,7 @@ export class HospitalService {
                 address:true,
                 rating:true,
                 avatar:true,
+                attendingHospitalId: true,
                 appointments : {
                     where:{
                         hospitalId: hospitalId
@@ -179,7 +180,7 @@ export class HospitalService {
         });
 
         if(!doctor){
-            throw new BadRequestException("Doctor not registered with hospital");
+            throw new NotFoundException("Doctor not registered with hospital");
         }
 
         return {doctor};
@@ -228,6 +229,56 @@ export class HospitalService {
         });
         
         return {msg: "Doctor Regstration removes from Hospital"};
+    }
+
+    async doctorPunchIn(hospitalId: string, doctorId: string) {
+
+        await this.getDoctor(hospitalId, doctorId);
+
+        const doctor = await this.prismaService.doctor.update({
+            where:{
+                id: doctorId,
+                affiliatedHospitals :{
+                    some:{
+                        id: hospitalId
+                    }
+                }
+            },
+            data:{
+                attendingHospitalId: hospitalId
+            }
+        });
+
+        if(!doctor){
+            throw new BadRequestException("Doctor not found");
+        }
+
+        return {msg: "Doctor Punched In"};
+    }
+
+    async doctorPunchOut(hospitalId: string, doctorId: string) {
+
+        await this.getDoctor(hospitalId, doctorId);
+
+        const doctor = await this.prismaService.doctor.update({
+            where:{
+                id: doctorId,
+                affiliatedHospitals:{
+                    some:{
+                        id: hospitalId
+                    }
+                }
+            },
+            data:{
+                attendingHospitalId: null
+            }
+        });
+
+        if(!doctor){
+            throw new BadRequestException("Doctor not found");
+        }
+    
+        return { msg: "Doctor Punched Out" };
     }
 
     async getDoctorAppointments(hospitalId: string, doctorId: string) {
@@ -423,6 +474,33 @@ export class HospitalService {
         });
 
         return {msg: "Appointment Completed"};
+    }
+
+
+    // Emergency Appointments Services
+
+    async getDoctorsForEmergency(hospitalId: string, specialization: DoctorSpecialization) {
+        const doctors = await  this.prismaService.doctor.findMany({
+            where: {
+                affiliatedHospitals: {
+                    some: {
+                        id: hospitalId
+                    }
+                },
+                specialization: specialization,
+                attendingHospitalId: hospitalId
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                contactNumber: true,
+                specialization: true,
+                avatar: true,
+            }
+        });
+
+        return { doctors };
     }
 
     // Helpers

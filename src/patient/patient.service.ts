@@ -115,7 +115,7 @@ export class PatientService {
 
         }
 
-        const response = await fetch(`${this.config.get('Elastic_Server')}/elasticSearch/med-reports`, {
+        const response = await fetch(`${this.config.get('MICROSERVICE_SERVER')}/elasticSearch/med-reports`, {
             method: 'POST',
             body: JSON.stringify({
                 patientId,

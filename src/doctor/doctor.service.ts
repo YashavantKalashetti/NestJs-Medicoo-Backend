@@ -196,7 +196,7 @@ export class DoctorService {
 
         }
 
-        const response = await fetch(`${this.config.get('Elastic_Server')}/elasticSearch/med-reports`, {
+        const response = await fetch(`${this.config.get('MICROSERVICE_SERVER')}/elasticSearch/med-reports`, {
             method: 'POST',
             body: JSON.stringify({
                 patientId,
@@ -396,7 +396,7 @@ export class DoctorService {
                 case 'doc':
                 case 'docx':
                     {
-                        const response = await axios.post(`${this.config.get('Elastic_Server')}/elasticSearch/pdfToText`, {
+                        const response = await axios.post(`${this.config.get('MICROSERVICE_SERVER')}/elasticSearch/pdfToText`, {
                             databaseId,
                             patientId,
                             url
@@ -413,7 +413,7 @@ export class DoctorService {
                 case 'webp':
                 case 'avif':
                     {
-                        const response = await axios.post(`${this.config.get('Elastic_Server')}/elasticSearch/imageToText`, {
+                        const response = await axios.post(`${this.config.get('MICROSERVICE_SERVER')}/elasticSearch/imageToText`, {
                             databaseId,
                             patientId,
                             url

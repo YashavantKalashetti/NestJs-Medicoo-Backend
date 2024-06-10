@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Redirect } from '@nestjs/common';
 import { CommonModuleService } from './common-module.service';
 import { DoctorSpecialization, Hospital, HospitalSpeciality } from '@prisma/client';
-import { ValidateEnumPipe } from 'src/auth/customDecorator';
+import { GetUser, ValidateEnumPipe } from 'src/auth/customDecorator';
 
 @Controller('common-module')
 export class CommonModuleController {
@@ -23,15 +23,19 @@ export class CommonModuleController {
         return this.commonModuleService.getDetailsOfPlatform();
     }
 
-    @Post('nearby-hospitals')
-    async getNearbyHospitals(@Body() body: {latitude: string, longitude:string}){
+    @Get('nearby-hospitals')
+    async getNearbyHospitals(@Query('latitude') latitude: Number, @Query('longitude') longitude: Number, @Query('speciality', new ValidateEnumPipe(HospitalSpeciality)) speciality: HospitalSpeciality){
+        return this.commonModuleService.getNearbyHospitals(latitude, longitude, speciality);
+    }
 
-        return this.commonModuleService.getNearbyHospitals(body);
+    @Post('emergency-consult/:id')
+    async emergencyConsult(@GetUser('id') userId: string ,@Param('id', ParseUUIDPipe) hospitalId: string){
+        return this.commonModuleService.emergencyConsult(hospitalId, userId);
     }
 
     @Get('get-doctors')
-    async getDoctors(@Query('speciality', new ValidateEnumPipe(DoctorSpecialization)) speciality: DoctorSpecialization){
-        return this.commonModuleService.getDoctors(speciality);
+    async getDoctors(@Query('specialization', new ValidateEnumPipe(DoctorSpecialization)) specialization: DoctorSpecialization){
+        return this.commonModuleService.getDoctors(specialization);
     }
 
     @Get('get-hospitals')
@@ -48,5 +52,4 @@ export class CommonModuleController {
     async getHospitalById(@Param('id', ParseUUIDPipe) id: string){
         return this.commonModuleService.getHospitalById(id);
     }
-
 }

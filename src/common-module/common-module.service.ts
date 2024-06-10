@@ -7,9 +7,11 @@ import { RedisClientType } from 'redis';
 import { RedisProvider } from 'src/redis/redis.provider';
 import exp from 'constants';
 import e from 'express';
+import { ConfigService } from '@nestjs/config';
+import { stat } from 'fs';
 @Injectable()
 export class CommonModuleService {
-    constructor(private prismaService:PrismaService, private readonly redisProvider: RedisProvider){}
+    constructor(private prismaService:PrismaService, private readonly redisProvider: RedisProvider, private configService: ConfigService){}
 
     async getDetailsOfPlatform(){
         const doctorsCount = await this.prismaService.doctor.count();
@@ -31,8 +33,12 @@ export class CommonModuleService {
 
     }
 
-    async getNearbyHospitals(body: {latitude: string, longitude:string}){
-        const {latitude, longitude} = body;
+    async getNearbyHospitals(latitude: Number, longitude: Number, speciality: HospitalSpeciality){
+
+        if(!latitude || !longitude){
+            throw new BadRequestException('Please provide latitude and longitude');
+        }
+
         // const hospitalsWithinRange = await this.prismaService.hospital.findMany({
         //     where: {
         //         latitude: {
@@ -49,16 +55,75 @@ export class CommonModuleService {
         //         longitude: 'asc' // Then order by longitude
         //     },
         // });
+
         // return hospitalsWithinRange;
 
         
     }
 
-    async getDoctors(speciality: DoctorSpecialization){
+    async emergencyConsult(hospitalId: string, userId?: string){
+
+        const { hospital } = await this.getHospitalById(hospitalId);
+
+        let emergencyMessage = 'Emergency Consultation Request';
+
+        if(userId){
+            const user = await this.prismaService.patient.findUnique({
+                where:{
+                    id: userId
+                },
+                select:{
+                    id:true,
+                    name:true,
+                    contactNumber:true,
+                    parentId:true
+                }
+            });
+
+            if(user){
+                emergencyMessage = `Emergency Consultation Request from ${user.id} - ${user.name} - ${user.contactNumber}`;
+                const parntEmergencyMessage = `Patient ${user.id} - ${user.name} - ${user.contactNumber} has ben hospitalized. Please contact the hospital ${hospital.name} for more information.`;
+
+                if(user.parentId){
+
+                    await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/emergency-consult/${hospitalId}`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            receierId: hospitalId,
+                            status: 'EMERGENCY',
+                            message: parntEmergencyMessage,
+                            senderId: 'SYSTEM'
+                        })
+                    });
+
+                }
+            }
+        }
+
+        const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/emergency-consult/${hospitalId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                receierId: hospitalId,
+                status: 'EMERGENCY',
+                message: emergencyMessage,
+                senderId: 'SYSTEM'
+            })
+        });
+
+        if(response.status >= 400){
+            throw new BadRequestException("Error sending emergency consultation request. Please try again");
+        }
+
+        return {msg: "Emergency Consultation Request Sent"}
+    }
+
+    async getDoctors(specialization: DoctorSpecialization){
         try {
 
             // console.log("Speciality: ", speciality)
-            const cacheKey = speciality ? `doctorsSpeciality:${speciality}` : 'doctors';
+            const cacheKey = specialization ? `doctorsSpeciality:${specialization}` : 'doctors';
 
             const cachedData = await this.redisProvider.getClient().get(cacheKey);
             if(cachedData){
@@ -67,7 +132,7 @@ export class CommonModuleService {
 
             const doctors = await this.prismaService.doctor.findMany({
                 where:{
-                    specialization: speciality || undefined
+                    specialization: specialization || undefined
                 },
                 orderBy:{
                     rating: 'desc'

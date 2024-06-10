@@ -71,6 +71,8 @@ model Doctor {
   availableEndTime    String               @default("21:00")
   specialization      DoctorSpecialization @default(GENERAL_PRACTITIONER)
   affiliatedHospitals Hospital[]           @relation("DoctorsHospitals")
+  attendingHospital   Hospital?            @relation(fields: [attendingHospitalId], references: [id], onDelete: SetNull)
+  attendingHospitalId String?
   totalAppointments   Int                  @default(0)
   rating              Float                @default(0.0)
   prescriptions       Prescription[]
@@ -93,6 +95,7 @@ model Hospital {
   longitude          Float
   registeredDoctors  Doctor[]           @relation("DoctorsHospitals")
   registeredPatients Patient[]          @relation("PatientHospitals")
+  attendingDoctors   Doctor[]           
   appointments       Appointment[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt

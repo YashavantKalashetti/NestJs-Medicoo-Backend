@@ -11,6 +11,7 @@ export class ValidateEnumPipe implements PipeTransform {
       return undefined;
     }
 
+    value = value.toUpperCase().trim();
     const enumValues = Object.values(this.enumType);
     if (!enumValues.includes(value)) {
       throw new BadRequestException(`Invalid value '${value}' for enum '${metadata.data}'.`);

@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Redirect, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Redirect, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/JwtStrategy';
 import { ROLES } from 'src/auth/auth.service';
-import { GetUser, Roles } from 'src/auth/customDecorator';
+import { GetUser, Roles, ValidateEnumPipe } from 'src/auth/customDecorator';
 import { HospitalService } from './hospital.service';
 import { CreateAppointmentDto } from 'src/dto';
+import { DoctorSpecialization } from '@prisma/client';
 
 @Roles([ROLES.HOSPITAL])
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -47,6 +48,16 @@ export class HospitalController {
     @Patch('remove-doctor')
     async removeDoctorFromHospital(@GetUser('id') hospitalId: string, @Body('doctorId') doctorId: string){
         return this.hospitalService.removeDoctorFromHospital(hospitalId, doctorId);
+    }
+
+    @Patch('doctor-punch-in/:doctorId')
+    async doctorPunchIn(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
+        return this.hospitalService.doctorPunchIn(hospitalId, doctorId);
+    }
+
+    @Patch('doctor-punch-out/:doctorId')
+    async doctorPunchOut(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
+        return this.hospitalService.doctorPunchOut(hospitalId, doctorId);
     }
 
     @Get('doctor-appointment/:doctorId')
@@ -94,5 +105,11 @@ export class HospitalController {
         return this.hospitalService.registerPatientToHospital(hospitalId, patientId);
     }
 
+
+    // Emergency routes
+    @Get('getDoctorsForEmergency')
+    async getDoctorsForEmergency(@GetUser('id') hospitalId: string, @Query('specialization', new ValidateEnumPipe(DoctorSpecialization)) specialization: DoctorSpecialization){
+        return this.hospitalService.getDoctorsForEmergency(hospitalId, specialization);
+    }
 
 }
