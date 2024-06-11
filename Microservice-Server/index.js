@@ -16,7 +16,7 @@ app.post('/sendMessageToAll', async (req, res) => {
         const { message } = req.body;
     
         if(!message) {
-            res.status(400).send('Missing required fields');
+            res.status(400).json({msg: 'Missing required fields' });
         }
     
         const data = await Message.create({
@@ -27,19 +27,67 @@ app.post('/sendMessageToAll', async (req, res) => {
     
         broadcastToAll({ from: 'server', data: message });
     
-        res.status(200).send('Message sent to all connected clients');
+        res.status(200).json({msg :'Message sent to all connected clients'});
     } catch (error) {
-        res.status(500).send('Internal server error');
+        res.status(500).json({msg : 'Internal server error'});
     }
 });
 
 // Endpoint to manually send message to a specific user
 app.post('/sendMessageToUser', async (req, res) => {
     try {
-        const { senderId, receiverId, message } = req.body;
+        const { senderId, receiverId, message, status } = req.body;
     
-        if(!senderId || !receiverId || !message) {
-            res.status(400).send('Missing required fields');
+        if(!receiverId || !message || !senderId) {
+            return res.status(400).send('Missing required fields');
+        }
+
+        const dbMessage = await Message.create({
+            senderId,
+            receiverId,
+            data: message
+        });
+    
+        const messageSent =  broadcastToUser(receiverId, { from: `${senderId}`, data: message });
+
+        if(messageSent) {
+            await dbMessage.updateOne({ status: 'SENT' });
+        }
+    
+        return res.status(200).json({ msg : `Message sent to user ${receiverId}`});
+    } catch (error) {
+        return res.status(500).send('Internal server error');
+    }
+});
+
+app.post('/sendEmergencyMessage', async (req, res) => {
+    try {
+
+        let { senderId, receiverId, message } = req.body;
+    
+        if(!receiverId || !message) {
+            return res.status(400).json({msg: 'Missing required fields'} );
+        }
+
+        if(!senderId) {
+            senderId = 'EMERGENCY PATIENT';
+        }
+
+        // Check if the message has already been sent to the receiver
+
+        const prevMessage = await Message.findOne({
+            senderId,
+            receiverId,
+            data: message,
+            date: {
+                $gte: new Date(new Date().setHours(0, 0, 0)),
+                $lt: new Date(new Date().setHours(23, 59, 59))
+            }
+        });
+
+        if(prevMessage){
+            console.log('Emergency message already sent.');
+            return res.status(400).json({msg : 'Emergency message already sent.'});
         }
     
         const dbMessage = await Message.create({
@@ -49,16 +97,20 @@ app.post('/sendMessageToUser', async (req, res) => {
         });
     
         const messageSent = broadcastToUser(receiverId, { from: `${senderId}`, data: message });
-
         if(messageSent) {
             await dbMessage.updateOne({ status: 'SENT' });
+        }else if(!messageSent) {
+            console.log('User is not online Could not alert the user.');
+            return res.status(400).json({msg :'User is not online Could not alert the user.'});
         }
     
-        res.status(200).send(`Message sent to user ${receiverId}`);
+        return res.status(200).json({msg:'Message sent to all connected clients'});
     } catch (error) {
-        res.status(500).send('Internal server error');
+        console.log(error.message);
+        return res.status(500).json({msg: 'Internal server error'});
     }
 });
+
 
 app.post('/addNewUserToAllUsers', (req, res) => {
     const { userId } = req.body;
@@ -70,7 +122,7 @@ app.post('/addNewUserToAllUsers', (req, res) => {
 // Example route to add a new user to dedicatedUsers
 app.post('/addUserToDedicatedUsers', (req, res) => {
     const { userId } = req.body;
-    // Assume you have the WebSocket connection `ws` for this user
+    // Assume you have the WebSocket connection ws for this user
     addUserToDedicatedUsers(userId, ws);
     res.status(200).send('Added new user to dedicatedUsers');
 });

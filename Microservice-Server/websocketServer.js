@@ -12,6 +12,8 @@ const messageQueueToUser = {};
 
 async function sendQueuedMessagesToUser(userId) {
 
+    console.log('Sending queued messages to user', userId);
+
     const messages = await Message.find({ receiverId: userId, status: 'PENDING' });
 
     messages.forEach(async (message) => {

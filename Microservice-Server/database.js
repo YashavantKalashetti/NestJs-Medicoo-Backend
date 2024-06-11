@@ -18,9 +18,9 @@ const MessageShema = new Schema({
         type: String,
         default: 'PENDING'
     },
-    createdAt: { type: Date, default: Date.now, expires: 200 }
+    createdAt: { type: Date, default: Date.now, expires: 60*60*24 }
 });
 
-const Message = mongoose.model('Message', MessageShema);
+const Message = mongoose.model('message', MessageShema);
 
 module.exports = { Message };

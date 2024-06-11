@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AppointmentStatus, Patient, Prescription } from '@prisma/client';
 import { GetUser, Roles } from '../auth/customDecorator';
@@ -36,8 +36,8 @@ export class PatientController {
     }
 
     @Get('get-medicalReports')
-    async getPatientReports(@GetUser('id') userId: string){
-        return this.patientService.getPatientReports(userId);
+    async getPatientReports(@GetUser('id') userId: string, @Query('search') search: string){
+        return this.patientService.getPatientReports(userId, search);
     }
 
     // @Post('book-emergency-appointment')
@@ -63,7 +63,7 @@ export class PatientController {
     }
 
     @Get('inactive-prescriptions')
-    async inactivePrescription(@GetUser('id') userId: string): Promise<Prescription[]>{
+    async inactivePrescription(@GetUser('id') userId: string){
         return this.patientService.inactivePrescriptions(userId);
     }
 
