@@ -226,14 +226,17 @@ export class PatientService {
             throw new BadRequestException("Appointment not found");
         }
 
-        await this.prismaService.appointment.delete({
+        await this.prismaService.appointment.update({
             where: {
                 id: appointment.id
+            },
+            data:{
+                status: "COMPLETED"
             }
         });
 
         if(!rating){
-            return "Rating is required";
+            return {msg: "Rating could not be Submitted."} ;
         }
 
         const doctor = await this.prismaService.doctor.findUnique({
@@ -381,10 +384,35 @@ export class PatientService {
         });
 
         if(!children){
-            throw new NotFoundException("Child not found");
+            throw new NotFoundException("Child with your access not found");
         }
     
         return {children};
+    }
+
+    async getChildEmergencyAppointments(userId: string, patientId: string){
+        const {startOfToday, endOfToday} = this.IndianTime();
+    
+        await this.getChildDetails(userId, patientId);
+
+        const existingAppointments = await this.prismaService.appointment.findMany({
+            where: {
+                AND: [
+                    { patientId: patientId},
+                    { status: "EMERGENCY" },
+                ]
+            },
+            orderBy: {
+                date: 'desc'
+            },
+            include:{
+                doctor: true,
+                hospital: true
+            },
+            take: 3
+        });
+
+        return existingAppointments;
     }
 
     // Helpers

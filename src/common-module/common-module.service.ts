@@ -61,16 +61,22 @@ export class CommonModuleService {
         
     }
 
-    async emergencyConsult(hospitalId: string, userId?: string){
+    async emergencyConsult(hospitalId: string, reason: string, latitude: Number, longitude: Number, patientId: string){
+
+        if(!latitude || !longitude){
+            throw new BadRequestException('Please Provide Location to send emergency consultation request');
+        }
 
         const { hospital } = await this.getHospitalById(hospitalId);
 
-        let emergencyMessage = 'Emergency Consultation Request';
+        let emergencyMessage = `Emergency Consultation Request: Coordinates - Latitude: ${latitude}, Longitude: ${longitude}`;
 
-        if(userId){
+        if(!patientId){
+            patientId = "EMERGENCY PATIENT"
+        }else if(patientId){
             const user = await this.prismaService.patient.findUnique({
                 where:{
-                    id: userId
+                    id: patientId
                 },
                 select:{
                     id:true,
@@ -81,42 +87,80 @@ export class CommonModuleService {
             });
 
             if(user){
-                emergencyMessage = `Emergency Consultation Request from ${user.id} - ${user.name} - ${user.contactNumber}`;
-                const parntEmergencyMessage = `Patient ${user.id} - ${user.name} - ${user.contactNumber} has ben hospitalized. Please contact the hospital ${hospital.name} for more information.`;
+                emergencyMessage = `Emergency Consultation Request from  Patient:  ${user.name} - ${user.contactNumber} - PatientId : ${user.id}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
+                const parntEmergencyMessage = `Patient ${user.name} - ${user.contactNumber} - PatientId : ${user.id}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
 
                 if(user.parentId){
+                    try {
+                        const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/sendEmergencyMessage`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                receiverId: user.parentId,
+                                status: 'EMERGENCY',
+                                message: parntEmergencyMessage,
+                                senderId: user.id
+                            })
+                        });
 
-                    await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/emergency-consult/${hospitalId}`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            receierId: hospitalId,
+                        if(response.ok){
+                            console.log('Parent Emergency Message Sent')
+                        }
+                    } catch (error) {
+                        console.log(error.message)
+                    }
+
+                }
+
+                const currentDayPrevAppointment = await this.prismaService.appointment.findFirst({
+                    where:{
+                        patientId: user.id,
+                        status: 'EMERGENCY',
+                        AND:[
+                            {
+                                createdAt:{
+                                    gte: new Date(new Date().setHours(0,0,0,0))
+                                }
+                            }
+                        ]
+                    }
+                });
+
+                if(!currentDayPrevAppointment){
+                    await this.prismaService.appointment.create({
+                        data:{
+                            patientId: user.id,
                             status: 'EMERGENCY',
-                            message: parntEmergencyMessage,
-                            senderId: 'SYSTEM'
-                        })
+                            reason: reason || 'Emergency Consultation',
+                        }
                     });
-
                 }
             }
         }
 
-        const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/emergency-consult/${hospitalId}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                receierId: hospitalId,
-                status: 'EMERGENCY',
-                message: emergencyMessage,
-                senderId: 'SYSTEM'
-            })
-        });
+        try {
+            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/sendEmergencyMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    receiverId: hospitalId,
+                    status: 'EMERGENCY',
+                    message: emergencyMessage,
+                    senderId: patientId
+                })
+            });
+    
+    
+            if(!response.ok){
+                throw new BadRequestException("Error sending emergency consultation request. Please try again");
+            }
 
-        if(response.status >= 400){
-            throw new BadRequestException("Error sending emergency consultation request. Please try again");
+            return { msg: "Emergency Consultation Request Sent" }
+        } catch (error) {
+            console.log(error.message)
+            return {msg :"Hosptal is currently offline. But the request is still notified Please try again later"};
         }
 
-        return {msg: "Emergency Consultation Request Sent"}
     }
 
     async getDoctors(specialization: DoctorSpecialization){

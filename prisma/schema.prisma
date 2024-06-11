@@ -69,6 +69,7 @@ model Doctor {
   consultingFees      Int                  @default(500)
   availableStartTime  String               @default("19:00")
   availableEndTime    String               @default("21:00")
+  availableForConsult Boolean              @default(false)
   specialization      DoctorSpecialization @default(GENERAL_PRACTITIONER)
   affiliatedHospitals Hospital[]           @relation("DoctorsHospitals")
   attendingHospital   Hospital?            @relation(fields: [attendingHospitalId], references: [id], onDelete: SetNull)
@@ -95,6 +96,7 @@ model Hospital {
   longitude          Float
   registeredDoctors  Doctor[]           @relation("DoctorsHospitals")
   registeredPatients Patient[]          @relation("PatientHospitals")
+  availabeForConsult Boolean            @default(false)
   attendingDoctors   Doctor[]           
   appointments       Appointment[]
   createdAt          DateTime           @default(now())
@@ -137,10 +139,10 @@ model Medication {
 
 model Appointment {
   id         String            @id @default(uuid())
-  patient    Patient           @relation(fields: [patientId], references: [id])
-  patientId  String
-  doctor     Doctor            @relation(fields: [doctorId], references: [id])
-  doctorId   String
+  patient    Patient?           @relation(fields: [patientId], references: [id])
+  patientId  String?            
+  doctor     Doctor?            @relation(fields: [doctorId], references: [id])
+  doctorId   String?
   date       DateTime          @default(now())
   reason     String
   createdAt  DateTime          @default(now())

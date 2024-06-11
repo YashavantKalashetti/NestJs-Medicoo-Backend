@@ -88,5 +88,9 @@ export class PatientController {
         return this.patientService.getChildDetails(userId, patientId);
     }
 
+    @Get('get-childEmergencyAppointments/:id')
+    async getChildEmergencyAppointments(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) patientId: string){
+        return this.patientService.getChildEmergencyAppointments(userId, patientId);
+    }
 
 }

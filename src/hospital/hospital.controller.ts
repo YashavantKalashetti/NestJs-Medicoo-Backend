@@ -112,4 +112,9 @@ export class HospitalController {
         return this.hospitalService.getDoctorsForEmergency(hospitalId, specialization);
     }
 
+    @Get('underTake-patientEmergencyAppointment/:id')
+    async underTakePatientEmergencyAppointment(@GetUser('id') hospitalId: string, @Param('id') patientId: string){
+        return this.hospitalService.undertakePatientEmergencyAppointment(hospitalId, patientId);
+    }
+
 }

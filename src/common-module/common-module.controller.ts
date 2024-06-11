@@ -28,9 +28,10 @@ export class CommonModuleController {
         return this.commonModuleService.getNearbyHospitals(latitude, longitude, speciality);
     }
 
-    @Post('emergency-consult/:id')
-    async emergencyConsult(@GetUser('id') userId: string ,@Param('id', ParseUUIDPipe) hospitalId: string){
-        return this.commonModuleService.emergencyConsult(hospitalId, userId);
+    @Post('emergency-consult')
+    async emergencyConsult(@Body() body: {hospitalId: string, reason: string, latitude: Number, longitude: Number, patientId: string}){
+        const {hospitalId, reason, latitude, longitude, patientId} = body;
+        return this.commonModuleService.emergencyConsult(hospitalId, reason, latitude, longitude, patientId);
     }
 
     @Get('get-doctors')

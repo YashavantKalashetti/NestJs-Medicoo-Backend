@@ -396,7 +396,17 @@ export class HospitalService {
 
     async registerPatientToHospital(hospitalId: string, patientId: string) {
 
-        const patient = await this.prismaService.patient.update({
+        const patient = await this.prismaService.patient.findFirst({
+            where:{
+                id: patientId
+            }
+        }); 
+
+        if(!patient){
+            throw new NotFoundException("Patient not found");
+        }
+
+        await this.prismaService.patient.update({
             where:{
                 id: patientId
             },
@@ -409,11 +419,8 @@ export class HospitalService {
             }
         });
 
-        if(!patient){
-            throw new NotFoundException("Patient not found");
-        }
 
-        return {msg: "Registered Patient to Hospital"};
+        return { msg: "Registered Patient to Hospital" };
     }
 
     async getPatientAppointmentsInHospital(hospitalId: string, patientId: string) {
@@ -453,6 +460,7 @@ export class HospitalService {
                 patientId: appointmentDto.patientId,
                 hospitalId: hospitalId,
                 ...appointmentDto,
+                date: new Date(appointmentDto.date),
                 mode: AppointmentMode.OFFLINE
             }
         });
@@ -475,7 +483,6 @@ export class HospitalService {
 
         return {msg: "Appointment Completed"};
     }
-
 
     // Emergency Appointments Services
 
@@ -501,6 +508,42 @@ export class HospitalService {
         });
 
         return { doctors };
+    }
+
+    async undertakePatientEmergencyAppointment(hospitalId: string, patientId: string) {
+        const patient = await this.prismaService.patient.findUnique({
+            where:{
+                id: patientId
+            }
+        });
+
+        if(!patient){
+            throw new NotFoundException("Patient not found");
+        }
+
+        const appointment = await this.prismaService.appointment.findFirst({
+            where:{
+                patientId: patientId,
+                hospitalId: null,
+                doctorId: null,
+                status: "EMERGENCY"
+            }
+        });
+
+        if(!appointment || appointment.doctorId || appointment.hospitalId){
+            throw new NotFoundException("Appointment has been already Undertaken");
+        }
+
+        await this.prismaService.appointment.update({
+            where:{
+                id: appointment.id
+            },
+            data:{
+                hospitalId
+            }
+        });
+
+        return {msg: "Appointment Undertaken Successfully"};
     }
 
     // Helpers
