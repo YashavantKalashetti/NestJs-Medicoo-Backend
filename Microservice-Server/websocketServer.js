@@ -1,6 +1,6 @@
 const WebSocket = require('ws');
 const url = require('url');
-const { Message } = require('./database');
+const Message = require('./models/Message');
 
 const wssAllMessages = new WebSocket.Server({ noServer: true });
 const wssDedicatedMessages = new WebSocket.Server({ noServer: true });
