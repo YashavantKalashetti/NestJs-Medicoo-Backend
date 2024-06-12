@@ -9,6 +9,7 @@ import exp from 'constants';
 import e from 'express';
 import { ConfigService } from '@nestjs/config';
 import { stat } from 'fs';
+import { Prisma } from '@prisma/client';
 @Injectable()
 export class CommonModuleService {
     constructor(private prismaService:PrismaService, private readonly redisProvider: RedisProvider, private configService: ConfigService){}
@@ -33,32 +34,47 @@ export class CommonModuleService {
 
     }
 
-    async getNearbyHospitals(latitude: Number, longitude: Number, speciality: HospitalSpeciality){
+    async getNearbyHospitals(userLatitude: Number, userLongitude: Number, speciality: HospitalSpeciality){
 
-        if(!latitude || !longitude){
+        if(!userLatitude || !userLongitude){
             throw new BadRequestException('Please provide latitude and longitude');
         }
 
-        // const hospitalsWithinRange = await this.prismaService.hospital.findMany({
-        //     where: {
-        //         latitude: {
-        //             gte: parseFloat(latitude) - 0.3,
-        //             lte: parseFloat(latitude) + 0.3
-        //         },
-        //         longitude: {
-        //             gte: parseFloat(longitude) - 0.3,
-        //             lte: parseFloat(longitude) + 0.3
-        //         }
-        //     },
-        //     orderBy: {
-        //         latitude: 'asc', // Order by latitude
-        //         longitude: 'asc' // Then order by longitude
-        //     },
-        // });
-
-        // return hospitalsWithinRange;
-
+        const haversineDistance = (lat1, lon1, lat2, lon2) => {
+            const toRadians = (angle) => angle * (Math.PI / 180);
+            const R = 6371; // Radius of the Earth in kilometers
+            const dLat = toRadians(lat2 - lat1);
+            const dLon = toRadians(lon2 - lon1);
+            const a =
+              Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(toRadians(lat1)) *
+                Math.cos(toRadians(lat2)) *
+                Math.sin(dLon / 2) *
+                Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c; // Distance in kilometers
+            return distance;
+        };
+          
+        const  { hospitals } = await this.getHospitals(speciality);
         
+        const nearestHospitals = hospitals.map((hospital) => {
+            const distance = haversineDistance(
+              userLatitude,
+              userLongitude,
+              hospital.latitude,
+              hospital.longitude
+            );
+            return {
+              ...hospital,
+              distance,
+            };
+        });
+        
+        nearestHospitals.sort((a, b) => a.distance - b.distance);
+        
+        return { nearestHospitals };
+          
     }
 
     async emergencyConsult(hospitalId: string, reason: string, latitude: Number, longitude: Number, patientId: string){
@@ -92,7 +108,7 @@ export class CommonModuleService {
 
                 if(user.parentId){
                     try {
-                        const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/sendEmergencyMessage`, {
+                        const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/notification/sendEmergencyMessage`, {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify({
@@ -139,7 +155,7 @@ export class CommonModuleService {
         }
 
         try {
-            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/sendEmergencyMessage`, {
+            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/notification/sendEmergencyMessage`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -176,7 +192,7 @@ export class CommonModuleService {
 
             const doctors = await this.prismaService.doctor.findMany({
                 where:{
-                    specialization: specialization || undefined
+                    specialization: specialization || undefined,
                 },
                 orderBy:{
                     rating: 'desc'
@@ -212,7 +228,7 @@ export class CommonModuleService {
         hospitals = await this.prismaService.hospital.findMany({
             where:{
                 speciality: speciality || undefined,
-            }
+            },
         });
 
         hospitals.forEach(hospital => {
@@ -222,9 +238,8 @@ export class CommonModuleService {
         // console.log('Cache Miss')
         
         await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify(hospitals));
-        
 
-        return {hospitals};
+        return { hospitals };
     }
 
     async getDoctorById(id: string){
@@ -283,5 +298,6 @@ export class CommonModuleService {
 
         return {hospital};
     }
+    
 
 }

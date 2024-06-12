@@ -231,7 +231,7 @@ export class HospitalService {
         return {msg: "Doctor Regstration removes from Hospital"};
     }
 
-    async doctorPunchIn(hospitalId: string, doctorId: string) {
+    async setDoctorAvailableInHospital(hospitalId: string, doctorId: string) {
 
         await this.getDoctor(hospitalId, doctorId);
 
@@ -256,7 +256,7 @@ export class HospitalService {
         return {msg: "Doctor Punched In"};
     }
 
-    async doctorPunchOut(hospitalId: string, doctorId: string) {
+    async setDoctorUnAvailableInHospital(hospitalId: string, doctorId: string) {
 
         await this.getDoctor(hospitalId, doctorId);
 
@@ -544,6 +544,19 @@ export class HospitalService {
         });
 
         return {msg: "Appointment Undertaken Successfully"};
+    }
+
+    async setHospitalAvailability(hospitalId: string, available: boolean) {
+        const hospital = await this.prismaService.hospital.update({
+            where:{
+                id: hospitalId
+            },
+            data:{
+                availableForConsult: available
+            }
+        });
+
+        return {msg: "Hospital Availability Updated"};
     }
 
     // Helpers

@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { AppointmentMode, Doctor, PrescriptionStatus } from '@prisma/client';
+import { AppointmentMode, Doctor, PrescriptionStatus, Prisma } from '@prisma/client';
 import { CreatePrescriptionDto } from '../dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -23,7 +23,7 @@ export class DoctorService {
                         contactNumber: true,
                         email: true,
                     }
-                }
+                },
             },
         });
 
@@ -318,6 +318,23 @@ export class DoctorService {
         }
 
         return {msg: "Doctor timings updated successfully"};
+    }
+
+    async setDoctorAvailability(doctorId: string, available: boolean){
+        const doctor = await this.prismaService.doctor.update({
+            where:{
+                id: doctorId
+            },
+            data:{
+                availableForConsult: available
+            }
+        });
+
+        if(!doctor){
+            throw new InternalServerErrorException("Doctor availability could not be updated");
+        }
+
+        return { msg: "Doctor availability updated successfully" };
     }
 
     // helpers

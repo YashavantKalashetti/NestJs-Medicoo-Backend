@@ -28,9 +28,8 @@ export class PatientSignupDto{
 
     @IsString()
     @IsNotEmpty()
-    @MinLength(8)
+    @MinLength(8 , { message: "Password must be atleast 8 characters long" })
     password:string
-
 
     @IsString()
     @IsNotEmpty()

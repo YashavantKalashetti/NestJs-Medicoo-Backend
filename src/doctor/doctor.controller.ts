@@ -80,4 +80,14 @@ export class DoctorController {
         return this.doctorService.updateAppointmentTimings(doctorId, body);
     }
 
+    @Patch('set-doctor-availableForConsult')
+    async setHospitalAvailability(@GetUser('id') hospitalId: string){
+        return this.doctorService.setDoctorAvailability(hospitalId, true);
+    }
+
+    @Patch('set-doctor-unavailableForConsult')
+    async setHospitalUnavailability(@GetUser('id') hospitalId: string){
+        return this.doctorService.setDoctorAvailability(hospitalId, false);
+    }
+
 }

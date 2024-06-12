@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Redirect } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Redirect } from '@nestjs/common';
 import { CommonModuleService } from './common-module.service';
 import { DoctorSpecialization, Hospital, HospitalSpeciality } from '@prisma/client';
 import { GetUser, ValidateEnumPipe } from 'src/auth/customDecorator';
@@ -53,4 +53,5 @@ export class CommonModuleController {
     async getHospitalById(@Param('id', ParseUUIDPipe) id: string){
         return this.commonModuleService.getHospitalById(id);
     }
+
 }

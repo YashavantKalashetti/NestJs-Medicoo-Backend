@@ -1,6 +1,6 @@
 import { HospitalSpeciality } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
-import { IsDecimal, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsDecimal, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, MinLength } from "class-validator";
 
 export class HospitalSignupDto{
     @IsString()         
@@ -13,6 +13,7 @@ export class HospitalSignupDto{
 
     @IsString()         
     @IsNotEmpty()
+    @MinLength(8, { message: "Password must be atleast 8 characters long" })
     password: string;
 
     @IsString()         

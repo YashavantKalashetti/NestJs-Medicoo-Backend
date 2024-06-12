@@ -50,14 +50,14 @@ export class HospitalController {
         return this.hospitalService.removeDoctorFromHospital(hospitalId, doctorId);
     }
 
-    @Patch('doctor-punch-in/:doctorId')
-    async doctorPunchIn(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
-        return this.hospitalService.doctorPunchIn(hospitalId, doctorId);
+    @Patch('set-doctor-AvailableInHospital/:doctorId')
+    async setDoctorAvailableInHospital(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
+        return this.hospitalService.setDoctorAvailableInHospital(hospitalId, doctorId);
     }
 
-    @Patch('doctor-punch-out/:doctorId')
-    async doctorPunchOut(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
-        return this.hospitalService.doctorPunchOut(hospitalId, doctorId);
+    @Patch('set-doctor-unAvailableInHospital/:doctorId')
+    async setDoctorUnAvailableInHospital(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
+        return this.hospitalService.setDoctorUnAvailableInHospital(hospitalId, doctorId);
     }
 
     @Get('doctor-appointment/:doctorId')
@@ -77,7 +77,6 @@ export class HospitalController {
         const { oldDoctorId, newDoctorId, appointmentId } = body;
         return this.hospitalService.divergeSingleAppointment(hospitalId, oldDoctorId, newDoctorId, appointmentId);
     }
-    
 
     // Patient routes
     @Get('/patients')
@@ -115,6 +114,16 @@ export class HospitalController {
     @Get('underTake-patientEmergencyAppointment/:id')
     async underTakePatientEmergencyAppointment(@GetUser('id') hospitalId: string, @Param('id') patientId: string){
         return this.hospitalService.undertakePatientEmergencyAppointment(hospitalId, patientId);
+    }
+
+    @Patch('set-hospital-availableForConsult')
+    async setHospitalAvailability(@GetUser('id') hospitalId: string){
+        return this.hospitalService.setHospitalAvailability(hospitalId, true);
+    }
+
+    @Patch('set-hospital-unavailableForConsult')
+    async setHospitalUnavailability(@GetUser('id') hospitalId: string){
+        return this.hospitalService.setHospitalAvailability(hospitalId, false);
     }
 
 }

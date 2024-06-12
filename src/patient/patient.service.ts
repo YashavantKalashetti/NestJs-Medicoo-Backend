@@ -22,18 +22,30 @@ export class PatientService {
             throw new NotFoundException("Not found");
         }
 
-        const appointmentCount = await this.prismaService.appointment.findMany({
+        const appointments = await this.prismaService.appointment.findMany({
             where: {
                 patientId: userId,
-            }
+            },
+            select: {
+                id:true,
+                date: true,
+                reason: true,
+                mode: true,
+            },
+            orderBy: {
+                date: 'desc'
+            },
+            take: 5
         });
 
         const prescriptions = await this.prismaService.prescription.findMany({
             where: {
                 patientId: userId
-            },select:{
-                medications: true
-            }
+            },
+            include: {
+                medications: true,
+            },
+            take: 5
         });
 
         const medications = prescriptions.map(prescription => prescription.medications);
@@ -48,7 +60,7 @@ export class PatientService {
 
         delete patient.password;
 
-        return {patient, appointmentCount, prescriptions, medications, medicalDetails, reports};
+        return {patient, appointments, prescriptions, medications, medicalDetails, reports};
     }
 
     async getPrescriptions(userId: string){  
@@ -59,6 +71,9 @@ export class PatientService {
             },
             include:{
                 medications: true
+            },
+            orderBy:{
+                createdAt: 'desc'
             }
         });
 

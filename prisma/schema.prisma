@@ -74,9 +74,10 @@ model Doctor {
   affiliatedHospitals Hospital[]           @relation("DoctorsHospitals")
   attendingHospital   Hospital?            @relation(fields: [attendingHospitalId], references: [id], onDelete: SetNull)
   attendingHospitalId String?
+  documentProofs      String[]             
   totalAppointments   Int                  @default(0)
   rating              Float                @default(0.0)
-  prescriptions       Prescription[]
+  prescriptions       Prescription[]       
   appointments        Appointment[]
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
@@ -96,7 +97,7 @@ model Hospital {
   longitude          Float
   registeredDoctors  Doctor[]           @relation("DoctorsHospitals")
   registeredPatients Patient[]          @relation("PatientHospitals")
-  availabeForConsult Boolean            @default(false)
+  availableForConsult Boolean            @default(false)
   attendingDoctors   Doctor[]           
   appointments       Appointment[]
   createdAt          DateTime           @default(now())
@@ -131,6 +132,7 @@ model Medication {
   medicine       String
   dosage         String
   instruction    String
+  numberOfTimes  Int          @default(1)
   numberOfDays   Int          @default(1)
   validTill      DateTime     @default(now())
 
