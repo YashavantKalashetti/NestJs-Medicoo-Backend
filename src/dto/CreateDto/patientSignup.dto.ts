@@ -7,11 +7,11 @@ export class PatientSignupDto{
     @IsNotEmpty()
     name:string;
 
-    @IsString()
+    @IsNumber()
     @IsNotEmpty()
     aadharNumber:number 
     
-    @IsString()
+    @IsNumber()
     @IsNotEmpty()
     contactNumber: number
     

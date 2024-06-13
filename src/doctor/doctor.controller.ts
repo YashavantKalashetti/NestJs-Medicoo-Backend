@@ -15,27 +15,32 @@ import { CloudinaryService, multerOptions } from 'src/Services';
 export class DoctorController {
     constructor(private doctorService: DoctorService, private cloudinaryService: CloudinaryService) {}
 
-    @Get('my-details')
+    @Get('')
     async getMyDetails_Doctor(@GetUser('id') doctorId: string){
         return this.doctorService.getMyDetails_Doctor(doctorId);
     }
 
-    @Get('get-appointments')
+    @Get('appointments')
     async getAppointments(@GetUser('id') userId: string) {
         return this.doctorService.getAppointments(userId);
     }
 
-    @Get('get-patientPrescriptions/:id')
+    @Get('patient/:id')
+    async getPatientById(@Param('id', ParseUUIDPipe) patientId: string) {
+        return this.doctorService.getPatientById(patientId);
+    }
+
+    @Get('patient/:id/prescriptions')
     async getPatientPrescriptionById(@Param('id', ParseUUIDPipe) patientId: string) {
         return this.doctorService.getPatientPrescriptionById(patientId);
     }
 
-    @Get('get-patientReports/:id')
+    @Get('patient/:id/reports')
     async getPatientReportsById(@Param('id') patientId: string, @Query('search') search: string) {
         return this.doctorService.getPatientReportsById(patientId, search);
     }
 
-    @Get('get-patientMedications/:id')
+    @Get('patient/:id/medications')
     async getPatientMedicationsById(@Param('id', ParseUUIDPipe) patientId: string) {
         return this.doctorService.getPatientMedicationsById(patientId);
     }

@@ -15,27 +15,27 @@ export class PatientController {
 
     constructor(private patientService: PatientService){}
 
-    @Get('my-details')
+    @Get('')
     async getMyDetails_Patient(@GetUser('id') userId: string){
         return this.patientService.getMyDetails_Patient(userId);
     }
 
-    @Get('get-prescriptions')
+    @Get('prescriptions')
     async getPrescriptions(@GetUser('id') userId: string){  
         return this.patientService.getPrescriptions(userId);
     }
 
-    @Get('get-prescriptionById/:id')
+    @Get('prescription/:id')
     async getPrescriptionById(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) prescriptionId: string){
         return this.patientService.getPrescriptionById(userId, prescriptionId);
     }
 
-    @Get('get-currentMedications')
+    @Get('medications')
     async getAllCurrentMedications(@GetUser('id') userId: string){
         return this.patientService.getAllCurrentMedications(userId);
     }
 
-    @Get('get-medicalReports')
+    @Get('medicalReports')
     async getPatientReports(@GetUser('id') userId: string, @Param('search', ) search: string){
         return this.patientService.getPatientReports(userId, search);
     }
@@ -45,19 +45,19 @@ export class PatientController {
     //     return this.patientService.bookAppointment(userId,appointmentDto, AppointmentStatus.EMERGENCY);
     // }
 
-    @Post('book-appointment')
+    @Post('appointments')
     async bookAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto){
         // const appointmentDate = new Date(appointmentDto.date);
         // appointmentDto.date = appointmentDate.toISOString();
         return this.patientService.bookAppointment(userId,appointmentDto);
     }
 
-    @Get('get-appointments')
+    @Get('appointments')
     async getAppointments(@GetUser('id') userId: string){  
         return this.patientService.getAppointments(userId);
     }
 
-    @Post('appointment-review/:id')
+    @Post('appointment/:id/review')
     async reviewAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto, @Body('rating') rating: number, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) appointmentId: string){
         return this.patientService.reviewAppointment(userId,appointmentId, appointmentDto, rating);
     }
@@ -73,22 +73,22 @@ export class PatientController {
         return this.patientService.deletePrescription(userId, id);
     }
 
-    @Patch('update-parentAccess')
+    @Patch('parentAccess')
     async updateParentAccess(@GetUser('id') userId: string, @Body() body: any){
         return this.patientService.updateParent(userId, body.parentId);
     }
 
-    @Get('get-childrens')
+    @Get('childrens')
     async getChild(@GetUser('id') userId: string){
         return this.patientService.getChildrens(userId);
     }
 
-    @Get('get-childDetails/:id')
+    @Get('children/:id')
     async getChildDetails(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) patientId: string){
         return this.patientService.getChildDetails(userId, patientId);
     }
 
-    @Get('get-childEmergencyAppointments/:id')
+    @Get('child/:id/apointments')
     async getChildEmergencyAppointments(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) patientId: string){
         return this.patientService.getChildEmergencyAppointments(userId, patientId);
     }

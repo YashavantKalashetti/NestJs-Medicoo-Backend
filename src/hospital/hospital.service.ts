@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { AppointmentMode, DoctorSpecialization, Hospital } from '@prisma/client';
+import { AppointmentMode, AppointmentStatus, DoctorSpecialization, Hospital } from '@prisma/client';
 import { CreateAppointmentDto, PatientSignupDto } from 'src/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -23,7 +23,6 @@ export class HospitalService {
                         address:true,
                         rating:true,
                         avatar:true,
-                        totalAppointments:true,
                     }
                 },
                 registeredPatients:{
@@ -65,10 +64,16 @@ export class HospitalService {
         return { hospital, todayAppointment, previousAppointments , registeredDoctors, patientsCount, emergencyAppointments};
     }
 
-    async getHospitalAppointments(hospitalId: string) {
+    async getHospitalAppointments(hospitalId: string, status?: AppointmentStatus) {
+
+        if(status && status !== "NORMAL" && status !== "EMERGENCY"){
+            status = undefined;
+        }
+
         return this.prismaService.appointment.findMany({
             where: {
-                hospitalId: hospitalId
+                hospitalId: hospitalId,
+                status: status
             },
             include: {
                 patient: {
@@ -128,14 +133,15 @@ export class HospitalService {
 
     // Doctor Services
 
-    async getDoctors(hospitalId: string) {
+    async getDoctors(hospitalId: string, specialization?: DoctorSpecialization) {
         return this.prismaService.doctor.findMany({
             where: {
                 affiliatedHospitals: {
                     some: {
-                        id: hospitalId
+                        id: hospitalId,
                     }
-                }
+                },
+                specialization: specialization
             },
             select: {
                 id: true,
@@ -143,7 +149,6 @@ export class HospitalService {
                 email: true,
                 contactNumber: true,
                 specialization: true,
-                address: true,
                 rating: true,
                 avatar: true,
             }
@@ -166,10 +171,8 @@ export class HospitalService {
                 email:true,
                 contactNumber:true,
                 specialization:true,
-                address:true,
                 rating:true,
                 avatar:true,
-                attendingHospitalId: true,
                 appointments : {
                     where:{
                         hospitalId: hospitalId
@@ -291,10 +294,10 @@ export class HospitalService {
                     { doctorId},
                     { hospitalId},
                     { date: { gte: startOfToday, lt: endOfToday } },
-                    {status: "NORMAL" || "EMERGENCY"}
                 ]
             }
         });
+
 
         const offlineAppointments = appointments.filter(appointment => appointment.mode === AppointmentMode.OFFLINE);
         const onlineAppointments = appointments.filter(appointment => appointment.mode === AppointmentMode.ONLINE);
@@ -384,6 +387,11 @@ export class HospitalService {
                 email:true,
                 contactNumber:true,
                 address:true,
+                appointments:{
+                    where:{
+                        hospitalId: hospitalId
+                    }
+                }
             }
         });
 

@@ -33,8 +33,11 @@ export class DoctorService {
 
         const appointments = await this.prismaService.appointment.findMany({
             where: {
-                patientId: userId
+                doctorId: userId
             },
+            orderBy:{
+                date: 'asc'
+            }
         });
 
         const onlineAppointments = appointments.filter(appointment => appointment.mode === "ONLINE");
@@ -46,7 +49,7 @@ export class DoctorService {
         return {doctor, onlineAppointments, offlineAppointments, registeredHospitals};
     }
 
-    async getAppointments(userId: string) {
+    async getAppointments(userId: string, ) {
         const {startOfToday, endOfToday} = this.IndianTime();
     
         const appointments = await this.prismaService.appointment.findMany({
@@ -61,6 +64,25 @@ export class DoctorService {
                 patient: {
                     select: {
                         name: true,
+                        contactNumber: true,
+                        gender: true,
+                        dob: true,
+                    },
+                }
+            }
+        });
+
+        const previousAppointments = await this.prismaService.appointment.findMany({
+            where: {
+                AND: [
+                    { doctorId: userId },
+                    { date: { lt: startOfToday } },
+                ]
+            },
+            include: {
+                patient: {
+                    select: {
+                        name: true,
                         email: true,
                         contactNumber: true,
                         gender: true,
@@ -69,6 +91,7 @@ export class DoctorService {
                 }
             }
         });
+
     
         if (!appointments || appointments.length === 0) {
             return {msg : "No appointments found"};
@@ -76,14 +99,54 @@ export class DoctorService {
     
         const allAppointments = appointments.map((app) => {
             const clonedAppointment = { ...app };
-            (clonedAppointment.patient as any).age = this.calculateAge(app.patient.dob);
+            (clonedAppointment.patient as any).age = this.calculateYears(app.patient.dob);
             return clonedAppointment;
         });
 
         const offlineAppointments = allAppointments.filter(appointment => appointment.mode === "OFFLINE");
         const onlineAppointments = allAppointments.filter(appointment => appointment.mode === "ONLINE");
     
-        return {offlineAppointments, onlineAppointments};
+        return {offlineAppointments, onlineAppointments, previousAppointments};
+    }
+
+    async getPatientById(patientId: string) {
+
+        const patient = await this.prismaService.patient.findUnique({
+            where: {
+                id: patientId
+            },
+            select: {
+                name: true,
+                contactNumber: true,
+                dob: true,
+                appointments: true,
+                prescriptions: {
+                    where: {
+                        status: PrescriptionStatus.ACTIVE
+                    },
+                    include: {
+                        medications: true
+                    }
+                },
+                medicalDetails: {
+                    select: {
+                        bloodGroup: true,
+                        height: true,
+                        weight: true,
+                        allergies: true,
+                        medicalHistory: true,
+                        systolic: true,
+                        diastolic: true,
+                    }
+                }
+            },
+        });
+
+        if(!patient){
+            throw new InternalServerErrorException("Patient not found");
+        }
+
+        return {patient};
     }
     
     async getPatientPrescriptionById(patientId: string) {
@@ -92,7 +155,13 @@ export class DoctorService {
                 patientId,
                 status: PrescriptionStatus.ACTIVE
             },
-            include:{
+            select:{
+                patientId: true,
+                prescriptionType: true,
+                status: true,
+                instructionForOtherDoctor: true,
+                date: true,
+                attachments: true,
                 medications: true
             }
         });
@@ -339,7 +408,7 @@ export class DoctorService {
 
     // helpers
 
-    private calculateAge(dateOfBirth: Date): number {
+    private calculateYears(dateOfBirth: Date): number {
         const today = new Date();
         const birthDate = new Date(dateOfBirth);
         let age = today.getFullYear() - birthDate.getFullYear();

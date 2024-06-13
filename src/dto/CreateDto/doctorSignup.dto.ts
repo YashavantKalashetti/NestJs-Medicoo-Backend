@@ -33,9 +33,18 @@ export class DoctorSignupDto{
     @IsDateString()
     dob: Date;
 
+    @IsDateString()
+    practicingSince: Date;
+
+    @IsString()
+    @IsOptional()
+    education?: string
+
     avatar?:string
 
     @IsNumber()
     @IsOptional()
     consultingFees: number;
+
+
 }

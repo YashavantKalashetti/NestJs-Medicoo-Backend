@@ -112,6 +112,8 @@ export class AuthService {
                 throw new BadRequestException('Specialisation must be a valid value given in the enum');
             }
 
+            doctorSignupDto.dob = new Date(doctorSignupDto.dob);
+            doctorSignupDto.practicingSince = new Date(doctorSignupDto.practicingSince);
             const hashedPassword = await argon2.hash(doctorSignupDto.password);
             const user = await this.prismaService.doctor.create({
                 data:{
@@ -183,6 +185,8 @@ export class AuthService {
             throw error;
         }
     }
+
+    // Helpers
 
     async signToken(userId: string, email: string, role:ROLES):Promise<{access_token: string}> {
         // console.log(role)

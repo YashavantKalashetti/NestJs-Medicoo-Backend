@@ -35,13 +35,15 @@ export class CommonModuleController {
     }
 
     @Get('get-doctors')
-    async getDoctors(@Query('specialization', new ValidateEnumPipe(DoctorSpecialization)) specialization: DoctorSpecialization){
-        return this.commonModuleService.getDoctors(specialization);
+    async getDoctors(@Query('specialization', new ValidateEnumPipe(DoctorSpecialization)) specialization: DoctorSpecialization,
+                @Query('page') page: number, @Query('perPage') perPage: number){
+        return this.commonModuleService.getDoctors(specialization, page, perPage);
     }
 
     @Get('get-hospitals')
-    async getHospitals(@Query('speciality', new ValidateEnumPipe(HospitalSpeciality)) speciality: HospitalSpeciality){
-        return this.commonModuleService.getHospitals(speciality);
+    async getHospitals(@Query('speciality', new ValidateEnumPipe(HospitalSpeciality)) speciality: HospitalSpeciality,
+                @Query('page') page: number, @Query('perPage') perPage: number){
+        return this.commonModuleService.getHospitals(speciality, page, perPage);
     }
 
     @Get('get-doctor/:id')

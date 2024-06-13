@@ -56,7 +56,23 @@ export class CommonModuleService {
             return distance;
         };
           
-        const  { hospitals } = await this.getHospitals(speciality);
+        const hospitals = await this.prismaService.hospital.findMany({
+            where:{
+                speciality: speciality || undefined,
+                availableForConsult: true
+            },
+            select:{
+                id:true,
+                name:true,
+                contactNumber:true,
+                email:true,
+                address:true,
+                latitude:true,
+                longitude:true,
+                speciality:true,
+                availableForConsult: true,
+            }
+        });
         
         const nearestHospitals = hospitals.map((hospital) => {
             const distance = haversineDistance(
@@ -179,7 +195,7 @@ export class CommonModuleService {
 
     }
 
-    async getDoctors(specialization: DoctorSpecialization){
+    async getDoctors(specialization: DoctorSpecialization, page: number=1, perPage: number=12){
         try {
 
             // console.log("Speciality: ", speciality)
@@ -196,12 +212,18 @@ export class CommonModuleService {
                 },
                 orderBy:{
                     rating: 'desc'
-                }
+                },
+                select:{
+                    id:true,
+                    name:true,
+                    specialization:true,
+                    rating:true,
+                    avatar:true,
+                    consultingFees:true,
+                    availableForConsult:true,
+                },take: perPage, skip: (page - 1) * perPage
             });
 
-            doctors.forEach(doctor => {
-                delete doctor.password;
-            });
             
             await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify(doctors));
             
@@ -212,7 +234,7 @@ export class CommonModuleService {
         }
     }
     
-    async getHospitals(speciality: HospitalSpeciality){
+    async getHospitals(speciality: HospitalSpeciality, page: number=1, perPage: number=12){
 
         let hospitals: any;
 
@@ -229,6 +251,15 @@ export class CommonModuleService {
             where:{
                 speciality: speciality || undefined,
             },
+            select:{
+                id:true,
+                name:true,
+                contactNumber:true,
+                email:true,
+                address:true,
+                speciality:true,
+                availableForConsult: true,
+            },take: perPage, skip: (page - 1) * perPage
         });
 
         hospitals.forEach(hospital => {
@@ -247,16 +278,24 @@ export class CommonModuleService {
             where: {
                 id
             },
-            include:{
+            select:{
+                id:true,
+                name:true,
+                specialization:true,
+                rating:true,
+                consultingFees:true,
+                education:true,
+                avatar:true,
+                practicingSince:true,
+                availableStartTime:true,
+                availableEndTime:true,
+                availableForConsult:true,
                 affiliatedHospitals:{
                     select:{
                         id:true,
                         name:true,
                         contactNumber:true,
-                        email:true,
                         address:true,
-                        latitude:true,
-                        longitude:true,
                     }
                 }
             }
@@ -266,7 +305,6 @@ export class CommonModuleService {
             throw new BadRequestException('Doctor not found');
         }
 
-        delete doctor.password;
         return {doctor};
     }
 
@@ -280,11 +318,10 @@ export class CommonModuleService {
                     select:{
                         id:true,
                         name:true,
-                        email:true,
-                        contactNumber:true,
+                        consultingFees:true,
+                        practicingSince:true,
                         specialization:true,
                         rating:true,
-                        totalAppointments:true,
                     }
                 }
             }
@@ -299,5 +336,4 @@ export class CommonModuleService {
         return {hospital};
     }
     
-
 }

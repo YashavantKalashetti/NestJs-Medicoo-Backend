@@ -73,8 +73,9 @@ model Doctor {
   specialization      DoctorSpecialization @default(GENERAL_PRACTITIONER)
   affiliatedHospitals Hospital[]           @relation("DoctorsHospitals")
   attendingHospital   Hospital?            @relation(fields: [attendingHospitalId], references: [id], onDelete: SetNull)
-  attendingHospitalId String?
-  documentProofs      String[]             
+  practicingSince     DateTime             @default(now())
+  education           String               @default("MBBS")
+  attendingHospitalId String?             
   totalAppointments   Int                  @default(0)
   rating              Float                @default(0.0)
   prescriptions       Prescription[]       
@@ -219,6 +220,7 @@ enum DoctorSpecialization {
   FAMILY_MEDICINE_PHYSICIAN
   GASTROENTEROLOGIST
   GERIATRICIAN
+  GYNECOLOGIST
   HEMATOLOGIST
   INFECTIOUS_DISEASE_SPECIALIST
   INTERNIST
@@ -250,13 +252,13 @@ enum HospitalSpeciality {
   EYE_CARE
   CARDIAC
   NEPHROLOGY
-  CANCER_TREATMENT
+  ONCOLOGY
   GENERAL
-  CHILDRENS_SPECIALTY
   MATERNITY
   ORTHOPEDIC
   NEUROLOGY
   PSYCHIATRY
+  PEDIATRIC
   GERIATRIC
   DERMATOLOGY
   GASTROENTEROLOGY

@@ -5,7 +5,7 @@ import { ROLES } from 'src/auth/auth.service';
 import { GetUser, Roles, ValidateEnumPipe } from 'src/auth/customDecorator';
 import { HospitalService } from './hospital.service';
 import { CreateAppointmentDto } from 'src/dto';
-import { DoctorSpecialization } from '@prisma/client';
+import { AppointmentStatus, DoctorSpecialization } from '@prisma/client';
 
 @Roles([ROLES.HOSPITAL])
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -13,29 +13,30 @@ import { DoctorSpecialization } from '@prisma/client';
 export class HospitalController {
     constructor(private hospitalService: HospitalService) {}
 
-    @Get('my-details')
+    @Get('')
     async getMyHospitalDetails(@GetUser('id') hospitalId: string ){
         return this.hospitalService.getMyHospitalDetails(hospitalId);
     }
 
     @Get('appointments')
-    async getHospitalAppointments(@GetUser('id') hospitalId: string){
-        return this.hospitalService.getHospitalAppointments(hospitalId);
+    async getHospitalAppointments(@GetUser('id') hospitalId: string, @Query('status', new ValidateEnumPipe(AppointmentStatus)) status: AppointmentStatus){
+        return this.hospitalService.getHospitalAppointments(hospitalId, status);
     }
 
-    @Get('emergency-appointments')
-    async getEmergencyAppointments(@GetUser('id') hospitalId: string){
-        return this.hospitalService.getEmergencyAppointments(hospitalId);
+    @Post('appointments')
+    async bookAppointment(@GetUser('id') hospitalId: string, @Body() appointmentDto: CreateAppointmentDto){
+        return this.hospitalService.bookAppointment(hospitalId, appointmentDto);
     }
 
+    
     // Doctor routes
     
-    @Get('/doctors')
-    async getDoctors(@GetUser('id') hospitalId: string ){
-        return this.hospitalService.getDoctors(hospitalId);
+    @Get('doctors')
+    async getDoctors(@GetUser('id') hospitalId: string, @Query('specialization', new ValidateEnumPipe(DoctorSpecialization)) specialization: DoctorSpecialization){
+        return this.hospitalService.getDoctors(hospitalId, specialization);
     }
 
-    @Get('doctors/:doctorId')
+    @Get('doctor/:doctorId')
     async getDoctor(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
         return this.hospitalService.getDoctor(hospitalId, doctorId);
     }
@@ -84,7 +85,7 @@ export class HospitalController {
         return this.hospitalService.getPatients(hospitalId);
     }
 
-    @Get('patients/:patientId')
+    @Get('patient/:patientId')
     async getPatient(@GetUser('id') hospitalId: string, @Param('patientId') patientId: string){
         return this.hospitalService.getPatient(hospitalId, patientId);
     }
@@ -94,16 +95,10 @@ export class HospitalController {
         return this.hospitalService.getPatientAppointmentsInHospital(hospitalId, patientId);
     }
 
-    @Post('book-appointment')
-    async bookAppointment(@GetUser('id') hospitalId: string, @Body() appointmentDto: CreateAppointmentDto){
-        return this.hospitalService.bookAppointment(hospitalId, appointmentDto);
-    }
-
     @Post('register-patient-to-hospital')
     async registerPatientToHospital(@GetUser('id') hospitalId: string, @Body('patientId') patientId: string){
         return this.hospitalService.registerPatientToHospital(hospitalId, patientId);
     }
-
 
     // Emergency routes
     @Get('getDoctorsForEmergency')

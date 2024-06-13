@@ -1,4 +1,4 @@
-import { Body, ClassSerializerInterceptor, Controller, HttpCode, HttpStatus, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Get, HttpCode, HttpStatus, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SigninDto, PatientSignupDto, DoctorSignupDto, HospitalSignupDto } from '../dto';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -49,7 +49,6 @@ export class AuthController {
     @Post('doctor/signup')
     @UseInterceptors(FileInterceptor('avatar', multerOptions))
     async doctorSignup(@UploadedFile() file: Express.Multer.File, @Body() doctorSignupDto: DoctorSignupDto){
-        doctorSignupDto.dob = new Date(doctorSignupDto.dob);
         const filePath = file?.path;
         if(filePath){
             const uploadResponse = await this.cloudinaryService.uploadImage(filePath);
