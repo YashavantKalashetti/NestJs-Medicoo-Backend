@@ -36,7 +36,7 @@ export class CommonModuleController {
 
     @Get('get-doctors')
     async getDoctors(@Query('specialization', new ValidateEnumPipe(DoctorSpecialization)) specialization: DoctorSpecialization,
-                @Query('page') page: number, @Query('perPage') perPage: number){
+            @Query('page') page: number, @Query('perPage') perPage: number){
         return this.commonModuleService.getDoctors(specialization, page, perPage);
     }
 

@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Doctor, DoctorSpecialization, Hospital, HospitalSpeciality } from '@prisma/client';
 import { UserEntity } from "../dto/UserEntity.dto";
 import { PrismaService } from '../prisma/prisma.service';
@@ -195,21 +195,27 @@ export class CommonModuleService {
 
     }
 
-    async getDoctors(specialization: DoctorSpecialization, page: number=1, perPage: number=12){
+    async getDoctors(specialization: DoctorSpecialization, page?: number, perPage?: number){
         try {
 
+            const currentPage = isNaN(Number(page)) ? 1 : Number(page);
+            const currentPerPage = isNaN(Number(perPage)) ? 12 : Number(perPage);
+
             // console.log("Speciality: ", speciality)
-            const cacheKey = specialization ? `doctorsSpeciality:${specialization}` : 'doctors';
+            const cacheKey = specialization ? `doctorsSpeciality-${page}-${specialization}` : 'doctors';
 
             const cachedData = await this.redisProvider.getClient().get(cacheKey);
             if(cachedData){
                 return {doctors: JSON.parse(cachedData)};
             }
 
+            console.log("Page: ", currentPage, "Specialization: ", specialization, "PerPage: ", currentPerPage)
+
             const doctors = await this.prismaService.doctor.findMany({
                 where:{
                     specialization: specialization || undefined,
                 },
+                skip: (currentPage - 1) * currentPerPage,
                 orderBy:{
                     rating: 'desc'
                 },
@@ -221,22 +227,25 @@ export class CommonModuleService {
                     avatar:true,
                     consultingFees:true,
                     availableForConsult:true,
-                },take: perPage, skip: (page - 1) * perPage
+                },  take: currentPerPage,
             });
 
             
-            await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify(doctors));
+            // await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify(doctors));
             
             return {doctors};
         } catch (error) {
-            console.log(error.meassage)
-            return {error: error.message}
+            console.log(error)
+            return new InternalServerErrorException('Error fetching doctors');
         }
     }
     
-    async getHospitals(speciality: HospitalSpeciality, page: number=1, perPage: number=12){
+    async getHospitals(speciality: HospitalSpeciality, page?: number, perPage?: number){
 
-        let hospitals: any;
+        
+
+        const currentPage = isNaN(Number(page)) ? 1 : Number(page);
+        const currentPerPage = isNaN(Number(perPage)) ? 12 : Number(perPage);
 
         const cacheKey = speciality ? `hospitalsSpeciality:${speciality}` : 'hospitals';
 
@@ -247,7 +256,7 @@ export class CommonModuleService {
             return {hospitals :JSON.parse(cachedData)};
         }
 
-        hospitals = await this.prismaService.hospital.findMany({
+        let hospitals = await this.prismaService.hospital.findMany({
             where:{
                 speciality: speciality || undefined,
             },
@@ -259,11 +268,7 @@ export class CommonModuleService {
                 address:true,
                 speciality:true,
                 availableForConsult: true,
-            },take: perPage, skip: (page - 1) * perPage
-        });
-
-        hospitals.forEach(hospital => {
-            delete hospital.password;
+            },skip: (currentPage - 1) * currentPage, take: currentPage, 
         });
 
         // console.log('Cache Miss')
