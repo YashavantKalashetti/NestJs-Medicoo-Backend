@@ -114,13 +114,14 @@ export class CommonModuleService {
                     id:true,
                     name:true,
                     contactNumber:true,
-                    parentId:true
+                    parentId:true,
+                    patient_number:true,
                 }
             });
 
             if(user){
-                emergencyMessage = `Emergency Consultation Request from  Patient:  ${user.name} - ${user.contactNumber} - PatientId : ${user.id}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
-                const parntEmergencyMessage = `Patient ${user.name} - ${user.contactNumber} - PatientId : ${user.id}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
+                emergencyMessage = `Emergency Consultation Request from  Patient:  ${user.name} - ${user.contactNumber} - PatientId : ${user.patient_number}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
+                const parntEmergencyMessage = `Patient ${user.name} - ${user.contactNumber} - PatientId : ${user.patient_number}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
 
                 if(user.parentId){
                     try {
@@ -241,7 +242,6 @@ export class CommonModuleService {
     }
     
     async getHospitals(speciality: HospitalSpeciality, page?: number, perPage?: number){
-
         
 
         const currentPage = isNaN(Number(page)) ? 1 : Number(page);
@@ -268,7 +268,7 @@ export class CommonModuleService {
                 address:true,
                 speciality:true,
                 availableForConsult: true,
-            },skip: (currentPage - 1) * currentPage, take: currentPage, 
+            },skip: (currentPage - 1) * currentPage, take: currentPerPage, 
         });
 
         // console.log('Cache Miss')

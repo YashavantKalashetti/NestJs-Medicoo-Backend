@@ -402,11 +402,11 @@ export class HospitalService {
         return {patient};
     }
 
-    async registerPatientToHospital(hospitalId: string, patientId: string) {
+    async registerPatientToHospital(hospitalId: string, patient_number: string) {
 
         const patient = await this.prismaService.patient.findFirst({
             where:{
-                id: patientId
+                patient_number
             }
         }); 
 
@@ -416,7 +416,7 @@ export class HospitalService {
 
         await this.prismaService.patient.update({
             where:{
-                id: patientId
+                patient_number
             },
             data:{
                 hospitalsRegistered:{

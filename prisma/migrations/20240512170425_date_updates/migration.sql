@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "medications" ADD COLUMN     "validTill" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

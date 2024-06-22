@@ -7,7 +7,6 @@ import { CreateAppointmentDto } from '../dto/CreateDto/createAppointment.dto';
 import { ROLES } from '../auth/auth.service';
 import { RolesGuard } from '../auth/JwtStrategy/roleGaurd';
 
-
 @Roles([ROLES.PATIENT])
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('patient')
@@ -75,7 +74,7 @@ export class PatientController {
 
     @Patch('parentAccess')
     async updateParentAccess(@GetUser('id') userId: string, @Body() body: any){
-        return this.patientService.updateParent(userId, body.parentId);
+        return this.patientService.updateParent(userId, body.patient_number);
     }
 
     @Get('childrens')

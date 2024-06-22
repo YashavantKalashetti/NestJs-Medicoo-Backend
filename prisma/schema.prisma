@@ -16,6 +16,7 @@ datasource db {
 model Patient {
   id                       String                     @id @default(uuid())
   name                     String
+  patient_number             String                   @unique
   contactNumber            String
   aadharNumber             String                     @unique
   gender                   Gender
@@ -59,6 +60,7 @@ model MedicalDetails{
 model Doctor {
   id                  String               @id @default(uuid())
   name                String
+  doctor_number         String               @unique
   contactNumber       String
   gender              Gender
   email               String               @unique
@@ -89,6 +91,7 @@ model Doctor {
 model Hospital {
   id                 String             @id @default(uuid())
   name               String
+  hospital_number      String             @unique
   contactNumber      String
   email              String             @unique
   password           String

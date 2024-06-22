@@ -320,15 +320,15 @@ export class PatientService {
         return { msg: "Prescription deleted successfully" };
     }
 
-    async updateParent(userId: string,parentId: string){
+    async updateParent(userId: string,patient_number: string){
         try {
-            if (!parentId) {
+            if (!patient_number) {
                 throw new Error('Parent ID is required');
             }
     
             // Check if the parent exists
             const parentExists = await this.prismaService.patient.findUnique({
-            where: { id: parentId },
+            where: { patient_number },
             });
     
             if (!parentExists) {
@@ -339,7 +339,7 @@ export class PatientService {
             const patient = await this.prismaService.patient.update({
             where: { id: userId },
             data: {
-                parentId: parentId,
+                patient_number,
             },
             });
     
