@@ -44,6 +44,7 @@ export class DoctorService {
         const offlineAppointments = appointments.filter(appointment => appointment.mode === "OFFLINE");
 
         const registeredHospitals = doctor.affiliatedHospitals.map(hospital => hospital);
+        doctor.affiliatedHospitals = registeredHospitals;
 
         delete doctor.password;
         return {doctor, onlineAppointments, offlineAppointments, registeredHospitals};
@@ -107,6 +108,25 @@ export class DoctorService {
         const onlineAppointments = allAppointments.filter(appointment => appointment.mode === "ONLINE");
     
         return {offlineAppointments, onlineAppointments, previousAppointments};
+    }
+
+    async getAppointmentById(userId: string, appointmentId: string) {
+        const appointments = await this.prismaService.appointment.findUnique({
+            where: {
+                id: appointmentId,
+                doctorId: userId
+            },
+            include: {
+                patient: {
+                    select: {
+                        name: true,
+                        contactNumber: true,
+                        gender: true,
+                        dob: true,
+                    },
+                }
+            }
+        });
     }
 
     async getPatientById(patientId: string) {

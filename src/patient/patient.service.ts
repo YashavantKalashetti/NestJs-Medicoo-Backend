@@ -43,12 +43,24 @@ export class PatientService {
                 patientId: userId
             },
             include: {
-                medications: true,
+                medications: {
+                    select: {
+                        medicine: true,
+                        dosage: true,
+                        instruction: true,
+                        validTill: true,
+                        prescriptionId: true,
+                        numberOfDays: true,
+                        numberOfTimes: true,
+                    }
+                }
             },
             take: 5
         });
 
-        const medications = prescriptions.map(prescription => prescription.medications);
+        const medications = prescriptions.map(prescription => prescription.medications).flat();
+
+        prescriptions.map(prescription => delete prescription.medications);
 
         const medicalDetails = await this.prismaService.medicalDetails.findFirst({
             where: {
@@ -311,7 +323,7 @@ export class PatientService {
     async updateParent(userId: string,parentId: string){
         try {
             if (!parentId) {
-            throw new Error('Parent ID is required');
+                throw new Error('Parent ID is required');
             }
     
             // Check if the parent exists

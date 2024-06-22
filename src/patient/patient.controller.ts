@@ -25,7 +25,7 @@ export class PatientController {
         return this.patientService.getPrescriptions(userId);
     }
 
-    @Get('prescription/:id')
+    @Get('prescriptions/:id')
     async getPrescriptionById(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) prescriptionId: string){
         return this.patientService.getPrescriptionById(userId, prescriptionId);
     }
@@ -45,16 +45,16 @@ export class PatientController {
     //     return this.patientService.bookAppointment(userId,appointmentDto, AppointmentStatus.EMERGENCY);
     // }
 
+    @Get('appointments')
+    async getAppointments(@GetUser('id') userId: string){  
+        return this.patientService.getAppointments(userId);
+    }
+
     @Post('appointments')
     async bookAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto){
         // const appointmentDate = new Date(appointmentDto.date);
         // appointmentDto.date = appointmentDate.toISOString();
         return this.patientService.bookAppointment(userId,appointmentDto);
-    }
-
-    @Get('appointments')
-    async getAppointments(@GetUser('id') userId: string){  
-        return this.patientService.getAppointments(userId);
     }
 
     @Post('appointment/:id/review')
@@ -83,12 +83,12 @@ export class PatientController {
         return this.patientService.getChildrens(userId);
     }
 
-    @Get('children/:id')
+    @Get('childrens/:id')
     async getChildDetails(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) patientId: string){
         return this.patientService.getChildDetails(userId, patientId);
     }
 
-    @Get('child/:id/apointments')
+    @Get('childrens/:id/apointments')
     async getChildEmergencyAppointments(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) patientId: string){
         return this.patientService.getChildEmergencyAppointments(userId, patientId);
     }

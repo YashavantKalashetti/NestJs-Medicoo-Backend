@@ -3,7 +3,7 @@ import { CommonModuleService } from './common-module.service';
 import { DoctorSpecialization, Hospital, HospitalSpeciality } from '@prisma/client';
 import { GetUser, ValidateEnumPipe } from 'src/auth/customDecorator';
 
-@Controller('common-module')
+@Controller('search')
 export class CommonModuleController {
 
     constructor(private commonModuleService: CommonModuleService,){}
@@ -34,24 +34,24 @@ export class CommonModuleController {
         return this.commonModuleService.emergencyConsult(hospitalId, reason, latitude, longitude, patientId);
     }
 
-    @Get('get-doctors')
+    @Get('doctors')
     async getDoctors(@Query('specialization', new ValidateEnumPipe(DoctorSpecialization)) specialization: DoctorSpecialization,
             @Query('page') page: number, @Query('perPage') perPage: number){
         return this.commonModuleService.getDoctors(specialization, page, perPage);
     }
 
-    @Get('get-hospitals')
+    @Get('hospitals')
     async getHospitals(@Query('speciality', new ValidateEnumPipe(HospitalSpeciality)) speciality: HospitalSpeciality,
                 @Query('page') page: number, @Query('perPage') perPage: number){
         return this.commonModuleService.getHospitals(speciality, page, perPage);
     }
 
-    @Get('get-doctor/:id')
+    @Get('doctors/:id')
     async getDoctorById(@Param('id', ParseUUIDPipe) id: string){
         return this.commonModuleService.getDoctorById(id);
     }
 
-    @Get('get-hospital/:id')
+    @Get('hospitals/:id')
     async getHospitalById(@Param('id', ParseUUIDPipe) id: string){
         return this.commonModuleService.getHospitalById(id);
     }

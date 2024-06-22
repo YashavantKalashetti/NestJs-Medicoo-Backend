@@ -28,7 +28,6 @@ export class HospitalController {
         return this.hospitalService.bookAppointment(hospitalId, appointmentDto);
     }
 
-    
     // Doctor routes
     
     @Get('doctors')
@@ -36,34 +35,34 @@ export class HospitalController {
         return this.hospitalService.getDoctors(hospitalId, specialization);
     }
 
-    @Get('doctor/:doctorId')
-    async getDoctor(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
-        return this.hospitalService.getDoctor(hospitalId, doctorId);
-    }
-
-    @Patch('register-doctor')
+    @Patch('doctors')
     async registerDoctorToHospital(@GetUser('id') hospitalId: string, @Body('doctorId') doctorId: string){
         return this.hospitalService.registerDoctorToHospital(hospitalId, doctorId);
     }
 
-    @Patch('remove-doctor')
+    @Get('doctors/:doctorId')
+    async getDoctor(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
+        return this.hospitalService.getDoctor(hospitalId, doctorId);
+    }
+
+    @Patch('doctors/:doctorId')
     async removeDoctorFromHospital(@GetUser('id') hospitalId: string, @Body('doctorId') doctorId: string){
         return this.hospitalService.removeDoctorFromHospital(hospitalId, doctorId);
     }
 
-    @Patch('set-doctor-AvailableInHospital/:doctorId')
+    @Get('doctors/:doctorId/appointments')
+    async getDoctorAppointments(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
+        return this.hospitalService.getDoctorAppointments(hospitalId, doctorId);
+    }
+
+    @Patch('doctors/:doctorId/available')
     async setDoctorAvailableInHospital(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
         return this.hospitalService.setDoctorAvailableInHospital(hospitalId, doctorId);
     }
 
-    @Patch('set-doctor-unAvailableInHospital/:doctorId')
+    @Patch('doctors/:doctorId/unavailable')
     async setDoctorUnAvailableInHospital(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
         return this.hospitalService.setDoctorUnAvailableInHospital(hospitalId, doctorId);
-    }
-
-    @Get('doctor-appointment/:doctorId')
-    async getDoctorAppointments(@GetUser('id') hospitalId: string, @Param('doctorId') doctorId: string){
-        return this.hospitalService.getDoctorAppointments(hospitalId, doctorId);
     }
 
     // change the appointments of one doctor to another doctor in case of Unavailability
@@ -85,7 +84,12 @@ export class HospitalController {
         return this.hospitalService.getPatients(hospitalId);
     }
 
-    @Get('patient/:patientId')
+    @Post('patients')
+    async registerPatientToHospital(@GetUser('id') hospitalId: string, @Body('patientId') patientId: string){
+        return this.hospitalService.registerPatientToHospital(hospitalId, patientId);
+    }
+
+    @Get('patients/:patientId')
     async getPatient(@GetUser('id') hospitalId: string, @Param('patientId') patientId: string){
         return this.hospitalService.getPatient(hospitalId, patientId);
     }
@@ -95,13 +99,8 @@ export class HospitalController {
         return this.hospitalService.getPatientAppointmentsInHospital(hospitalId, patientId);
     }
 
-    @Post('register-patient-to-hospital')
-    async registerPatientToHospital(@GetUser('id') hospitalId: string, @Body('patientId') patientId: string){
-        return this.hospitalService.registerPatientToHospital(hospitalId, patientId);
-    }
-
     // Emergency routes
-    @Get('getDoctorsForEmergency')
+    @Get('emergency-doctors')
     async getDoctorsForEmergency(@GetUser('id') hospitalId: string, @Query('specialization', new ValidateEnumPipe(DoctorSpecialization)) specialization: DoctorSpecialization){
         return this.hospitalService.getDoctorsForEmergency(hospitalId, specialization);
     }
@@ -111,14 +110,9 @@ export class HospitalController {
         return this.hospitalService.undertakePatientEmergencyAppointment(hospitalId, patientId);
     }
 
-    @Patch('set-hospital-availableForConsult')
-    async setHospitalAvailability(@GetUser('id') hospitalId: string){
-        return this.hospitalService.setHospitalAvailability(hospitalId, true);
-    }
-
-    @Patch('set-hospital-unavailableForConsult')
-    async setHospitalUnavailability(@GetUser('id') hospitalId: string){
-        return this.hospitalService.setHospitalAvailability(hospitalId, false);
+    @Patch('setAvailability')
+    async setHospitalAvailability(@GetUser('id') hospitalId: string, @Body('availability') availability: boolean){
+        return this.hospitalService.setHospitalAvailability(hospitalId, availability);
     }
 
 }

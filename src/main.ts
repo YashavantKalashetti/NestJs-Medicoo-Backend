@@ -13,6 +13,10 @@ async function bootstrap() {
   app.useGlobalPipes( new TrimAndFormatPipe(), new ValidationPipe(({whitelist: true, transform: true})));
   app.use(cookieParser());
   app.setGlobalPrefix('api/v1')
+  app.enableCors({
+    origin: '*',
+    credentials: true
+  });
   const configService: ConfigService = app.get(ConfigService);
   await app.listen(configService.get('PORT'));
 }
