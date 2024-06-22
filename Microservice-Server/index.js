@@ -13,11 +13,13 @@ const PaymentRouter = require('./routes/payment');
 const ElasticSearchRouter = require('./routes/ElasticSearch');
 const NotificationRouter = require('./routes/notification');
 const MailRouter = require('./routes/mail');
+const WhatsAppRouter = require('./routes/WhatsAppMessage');
 
 app.use('/api/v1/payment', PaymentRouter);
 app.use('/api/v1/elasticSearch', ElasticSearchRouter);
-app.use('/api/v1/notification', require('./routes/notification'));
+app.use('/api/v1/notification', NotificationRouter);
 app.use('/api/v1/mail', MailRouter);
+app.use('/api/v1/whatsapp', WhatsAppRouter);
 
 server.on('upgrade', (request, socket, head) => {
     const pathname = request.url;
