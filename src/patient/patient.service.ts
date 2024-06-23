@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, HttpCode, HttpStatus, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { Appointment, AppointmentStatus, Doctor, Patient, Prescription, PrescriptionStatus, Prisma } from '@prisma/client';
+import { Appointment, AppointmentStatus, Doctor, MedicationStatus, Patient, Prescription, PrescriptionStatus, Prisma } from '@prisma/client';
 import { CreateAppointmentDto } from '../dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { platform } from 'os';
@@ -113,17 +113,36 @@ export class PatientService {
         return {prescription};
     }
 
+    async updatePrescriptionDisplayStatus(userId: string, prescriptionId: string, status: boolean){
+        const updatedPrescription = await this.prismaService.prescription.update({
+            where: {
+                id: prescriptionId,
+                patientId: userId
+            },
+            data: {
+                displayable: status
+            }
+        });
+
+        if(!updatedPrescription){
+            throw new BadRequestException("Prescription not found");
+        }
+
+        return {msg: "Prescription status updated successfully"};
+    }
+
     async getAllCurrentMedications(userId: string){
         const prescriptions = await this.prismaService.prescription.findMany({
             where: {
                 patientId: userId,
+                status: PrescriptionStatus.ACTIVE
             },
             select:{
                 medications: true
             }
         });
 
-        return this.ismedicationValid(prescriptions);
+        return await this.ismedicationValid(prescriptions);
     }
 
     async getPatientReports(patientId: string, search: string){
@@ -444,21 +463,44 @@ export class PatientService {
 
     // Helpers
 
-    private ismedicationValid(prescriptions){
-        const allMedications = [];
-        prescriptions.map(prescription => {
-            prescription.medications.filter(medication => {
-                let today = new Date();
-                today.setHours(0, 0, 0, 0);
-                let date = new Date(medication.validTill);
-                date.setHours(0, 0, 0, 0);
+    private async ismedicationValid(prescriptions){
+        const validMediations = [];
+        const expiredMedications = [];
 
-                if (date >= today) {
-                    allMedications.push(medication);
+        prescriptions.forEach(async prescription => {
+            prescription.medications.forEach(async medication => {
+                if(medication.status === MedicationStatus.VALID){
+                    let today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    let validTillDate = new Date(medication.validTill);
+                    validTillDate.setHours(0, 0, 0, 0);
+
+                    if (validTillDate >= today) {
+                        const timeDiff = validTillDate.getTime() - today.getTime();
+                        const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24)); // Convert milliseconds to days
+
+                        medication.daysRemaining = daysRemaining;
+
+                        validMediations.push(medication);
+                    }else{
+                        await this.prismaService.medication.update({
+                            where: {
+                                id: medication.id
+                            },
+                            data: {
+                                status: MedicationStatus.EXPIRED
+                            }
+                        });
+                        expiredMedications.push(medication);
+                    }
+                }else{
+                    expiredMedications.push(medication);
                 }
-            })
+
+            });
         });
-        return allMedications;
+
+        return {validMediations, expiredMedications};
     }
 
     async isDoctorAvailable(doctor, requestedStartTime: Date, requestedEndTime: Date): Promise<boolean> {

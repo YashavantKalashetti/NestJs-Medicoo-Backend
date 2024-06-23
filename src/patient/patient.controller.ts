@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Search, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query, Search, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AppointmentStatus, Patient, Prescription } from '@prisma/client';
 import { GetUser, Roles } from '../auth/customDecorator';
@@ -27,6 +27,11 @@ export class PatientController {
     @Get('prescriptions/:id')
     async getPrescriptionById(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) prescriptionId: string){
         return this.patientService.getPrescriptionById(userId, prescriptionId);
+    }
+
+    @Patch('prescriptions/:id')
+    async updatePrescriptionDisplayStatus(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) prescriptionId: string, @Query('status') status: boolean){
+        return this.patientService.updatePrescriptionDisplayStatus(userId, prescriptionId, status);
     }
 
     @Get('medications')

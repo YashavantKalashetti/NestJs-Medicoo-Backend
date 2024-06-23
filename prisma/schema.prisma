@@ -24,6 +24,7 @@ model Patient {
   dob                      DateTime
   password                 String
   address                  String
+  avatar                   String?
   prescriptions            Prescription[]
   appointments             Appointment[]
   medicalDetails           MedicalDetails?
@@ -123,6 +124,7 @@ model Prescription {
   prescriptionType            PrescriptionType             @default(NORMAL)
   status                    PrescriptionStatus         @default(ACTIVE)
   prescriptionAttachementElasticSearch   PrescriptionAttachementElasticSearch[]
+  displayable             Boolean                    @default(false)
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt
 
@@ -139,6 +141,7 @@ model Medication {
   numberOfTimes  Int          @default(1)
   numberOfDays   Int          @default(1)
   validTill      DateTime     @default(now())
+  status         MedicationStatus @default(VALID)
 
   @@map("medications")
 }
@@ -199,6 +202,11 @@ enum Gender {
 enum PrescriptionStatus {
   ACTIVE
   INACTIVE
+}
+
+enum MedicationStatus {
+  VALID
+  EXPIRED
 }
 
 enum AppointmentStatus {
