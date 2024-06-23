@@ -189,21 +189,42 @@ export class HospitalService {
         return {doctor};
     }
 
-    async registerDoctorToHospital(hospitalId: string, doctorId: string) {
-        if(!doctorId){
+    async registerDoctorToHospital(hospitalId: string, doctor_number: string) {
+
+        if(!doctor_number){
             throw new BadRequestException("Doctor Id is required");
         }
-        const hospital = await this.prismaService.hospital.update({
+
+        const doctor = await this.prismaService.doctor.findUnique({
+            where:{
+                doctor_number
+            },
+            select:{
+                id:true,
+                affiliatedHospitals:true
+            }
+        })
+
+        if(!doctor){
+            throw new NotFoundException("Doctor not found");
+        }
+
+        if(doctor.affiliatedHospitals.some(hospital => hospital.id === hospitalId)){
+            throw new BadRequestException("Doctor already registered with hospital");
+        }
+
+        await this.prismaService.hospital.update({
             where:{
                 id: hospitalId
             },data:{
                 registeredDoctors:{
                     connect:{
-                        id: doctorId
+                        id: doctor.id
                     }
                 }
             }
         });
+
         return {msg: "Registered Doctor to Hospital"};
     }
 
@@ -211,15 +232,15 @@ export class HospitalService {
 
         await this.getDoctor(hospitalId, doctorId);
 
-        const appointments = this.getDoctorAppointments(hospitalId, doctorId);
+        const {offlineAppointments, onlineAppointments} = await this.getDoctorAppointments(hospitalId, doctorId);
 
-        if(appointments && !divergeDoctorId){
+        if( offlineAppointments.length > 0 && onlineAppointments.length > 0 && !divergeDoctorId){
             throw new BadRequestException("Diverge Doctor Id is required as there are some appointments pending for this doctor");
         }
 
         await this.divergeAppointments(hospitalId, doctorId, divergeDoctorId);
         
-        const hospital = await this.prismaService.hospital.update({
+        await this.prismaService.hospital.update({
             where:{
                 id: hospitalId
             },data:{
@@ -298,7 +319,6 @@ export class HospitalService {
             }
         });
 
-
         const offlineAppointments = appointments.filter(appointment => appointment.mode === AppointmentMode.OFFLINE);
         const onlineAppointments = appointments.filter(appointment => appointment.mode === AppointmentMode.ONLINE);
 
@@ -314,7 +334,6 @@ export class HospitalService {
             where:{
                 doctorId: oldDoctorId,
                 hospitalId: hospitalId,
-                mode: AppointmentMode.OFFLINE
             },
             data:{
                 doctorId: newDoctorId

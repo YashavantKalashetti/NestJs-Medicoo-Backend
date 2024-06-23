@@ -36,8 +36,8 @@ export class HospitalController {
     }
 
     @Patch('doctors')
-    async registerDoctorToHospital(@GetUser('id') hospitalId: string, @Body('doctorId') doctorId: string){
-        return this.hospitalService.registerDoctorToHospital(hospitalId, doctorId);
+    async registerDoctorToHospital(@GetUser('id') hospitalId: string, @Body('doctor_number') doctor_number: string){
+        return this.hospitalService.registerDoctorToHospital(hospitalId, doctor_number);
     }
 
     @Get('doctors/:doctorId')
