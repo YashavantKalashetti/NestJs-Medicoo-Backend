@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Search, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query, Search, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AppointmentStatus, Patient, Prescription } from '@prisma/client';
 import { GetUser, Roles } from '../auth/customDecorator';
@@ -29,6 +29,11 @@ export class PatientController {
         return this.patientService.getPrescriptionById(userId, prescriptionId);
     }
 
+    @Patch('prescriptions/:id')
+    async updatePrescriptionDisplayStatus(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) prescriptionId: string, @Query('status') status: boolean){
+        return this.patientService.updatePrescriptionDisplayStatus(userId, prescriptionId, status);
+    }
+
     @Get('medications')
     async getAllCurrentMedications(@GetUser('id') userId: string){
         return this.patientService.getAllCurrentMedications(userId);
@@ -56,7 +61,7 @@ export class PatientController {
         return this.patientService.bookAppointment(userId,appointmentDto);
     }
 
-    @Post('appointment/:id/review')
+    @Post('appointments/:id/review')
     async reviewAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto, @Body('rating') rating: number, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) appointmentId: string){
         return this.patientService.reviewAppointment(userId,appointmentId, appointmentDto, rating);
     }
@@ -87,9 +92,14 @@ export class PatientController {
         return this.patientService.getChildDetails(userId, patientId);
     }
 
-    @Get('childrens/:id/apointments')
+    @Get('childrens/:id/appointments')
     async getChildEmergencyAppointments(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) patientId: string){
         return this.patientService.getChildEmergencyAppointments(userId, patientId);
+    }
+
+    @Patch('doctorAccess')
+    async updatePrimaryDoctorAccess(@GetUser('id') userId: string, @Body() body){
+        return this.patientService.updatePrimaryDoctorAccess(userId, body);
     }
 
 }

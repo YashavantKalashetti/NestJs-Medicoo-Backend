@@ -6,10 +6,14 @@ import { Redis } from 'ioredis';
 import { RedisClientType } from 'redis';
 import { RedisProvider } from 'src/redis/redis.provider';
 import exp from 'constants';
-import e from 'express';
+import e, { response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { stat } from 'fs';
 import { Prisma } from '@prisma/client';
+import { RealTimeNotification } from 'src/Services/RealTimeNotification';
+import { WhatsAppMessage } from 'src/Services/WhatsAppMessage';
+import { generate } from 'rxjs';
+import { generateOTP } from 'src/Services/GenerateOTP';
 @Injectable()
 export class CommonModuleService {
     constructor(private prismaService:PrismaService, private readonly redisProvider: RedisProvider, private configService: ConfigService){}
@@ -100,8 +104,10 @@ export class CommonModuleService {
         }
 
         const { hospital } = await this.getHospitalById(hospitalId);
+        // Whtsapp Alert contacts
+        const contacts: String[] = [];
 
-        let emergencyMessage = `Emergency Consultation Request: Coordinates - Latitude: ${latitude}, Longitude: ${longitude}`;
+        let hospitalEmergencyMessage = `Emergency Consultation Request: Coordinates - Latitude: ${latitude}, Longitude: ${longitude}`;
 
         if(!patientId){
             patientId = "EMERGENCY PATIENT"
@@ -114,35 +120,18 @@ export class CommonModuleService {
                     id:true,
                     name:true,
                     contactNumber:true,
-                    parentId:true,
+                    parent:true,
                     patient_number:true,
                 }
             });
 
             if(user){
-                emergencyMessage = `Emergency Consultation Request from  Patient:  ${user.name} - ${user.contactNumber} - PatientId : ${user.patient_number}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
+                hospitalEmergencyMessage = `Emergency Consultation Request from  Patient:  ${user.name} - ${user.contactNumber} - PatientId : ${user.patient_number}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
                 const parntEmergencyMessage = `Patient ${user.name} - ${user.contactNumber} - PatientId : ${user.patient_number}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
 
-                if(user.parentId){
-                    try {
-                        const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/notification/sendEmergencyMessage`, {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({
-                                receiverId: user.parentId,
-                                status: 'EMERGENCY',
-                                message: parntEmergencyMessage,
-                                senderId: user.id
-                            })
-                        });
-
-                        if(response.ok){
-                            console.log('Parent Emergency Message Sent')
-                        }
-                    } catch (error) {
-                        console.log(error.message)
-                    }
-
+                if(user.parent && user.parent.id){
+                    await RealTimeNotification(user.id, user.parent.id, parntEmergencyMessage);
+                    contacts.push(user.parent.contactNumber);
                 }
 
                 const currentDayPrevAppointment = await this.prismaService.appointment.findFirst({
@@ -168,31 +157,19 @@ export class CommonModuleService {
                         }
                     });
                 }
+
             }
         }
 
-        try {
-            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/notification/sendEmergencyMessage`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    receiverId: hospitalId,
-                    status: 'EMERGENCY',
-                    message: emergencyMessage,
-                    senderId: patientId
-                })
-            });
-    
-    
-            if(!response.ok){
-                throw new BadRequestException("Error sending emergency consultation request. Please try again");
-            }
+        const hospitalNotificationStatus = await RealTimeNotification(patientId, hospital.id, hospitalEmergencyMessage);
+        contacts.push(hospital.contactNumber);
+        await WhatsAppMessage(contacts, hospitalEmergencyMessage);
 
-            return { msg: "Emergency Consultation Request Sent" }
-        } catch (error) {
-            console.log(error.message)
-            return {msg :"Hosptal is currently offline. But the request is still notified Please try again later"};
+        if(!hospitalNotificationStatus){
+            return {msg :"Hospital is currently offline. But the request is still notified Please try again later"};
         }
+``
+        return { msg: "Emergency Consultation Request Sent" }
 
     }
 
@@ -340,5 +317,31 @@ export class CommonModuleService {
 
         return {hospital};
     }
+
+
+    // Helpers
     
+    async verifyOTP(email: string, message: string){
+        try {
+            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/mail/sendEmail`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    email,
+                    message,
+                    subject: 'OTP Verification'
+                })
+            });
+    
+            if(response.ok){
+                return true;
+            }
+    
+            return false;
+        } catch (error) {
+            return false;
+        }
+
+    }
+
 }

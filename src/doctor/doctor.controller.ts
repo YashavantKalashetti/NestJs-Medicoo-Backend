@@ -59,8 +59,8 @@ export class DoctorController {
     }
 
     @Get('patient/:id/prescriptions')
-    async getPatientPrescriptionById(@Param('id', ParseUUIDPipe) patientId: string) {
-        return this.doctorService.getPatientPrescriptionById(patientId);
+    async getPatientPrescriptionById(@GetUser('id') userId: string,@Param('id', ParseUUIDPipe) patientId: string) {
+        return this.doctorService.getPatientPrescriptionById(userId, patientId);
     }
 
     @Get('patient/:id/reports')
@@ -69,8 +69,8 @@ export class DoctorController {
     }
 
     @Get('patient/:id/medications')
-    async getPatientMedicationsById(@Param('id', ParseUUIDPipe) patientId: string) {
-        return this.doctorService.getPatientMedicationsById(patientId);
+    async getPatientMedicationsById(@GetUser('id') userId: string ,@Param('id', ParseUUIDPipe) patientId: string) {
+        return this.doctorService.getPatientMedicationsById(userId, patientId);
     }
 
     @Patch('diverge-appointments')

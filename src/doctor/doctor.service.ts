@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { AppointmentMode, Doctor, PrescriptionStatus, Prisma } from '@prisma/client';
+import { AppointmentMode, Doctor, MedicationStatus, PrescriptionStatus, Prisma } from '@prisma/client';
 import { CreatePrescriptionDto } from '../dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -142,7 +142,8 @@ export class DoctorService {
                 appointments: true,
                 prescriptions: {
                     where: {
-                        status: PrescriptionStatus.ACTIVE
+                        status: PrescriptionStatus.ACTIVE,
+                        displayable: true
                     },
                     include: {
                         medications: true
@@ -169,22 +170,54 @@ export class DoctorService {
         return {patient};
     }
     
-    async getPatientPrescriptionById(patientId: string) {
-        const prescriptions = await this.prismaService.prescription.findMany({
-            where: {
-                patientId,
-                status: PrescriptionStatus.ACTIVE
-            },
-            select:{
-                patientId: true,
-                prescriptionType: true,
-                status: true,
-                instructionForOtherDoctor: true,
-                date: true,
-                attachments: true,
-                medications: true
+    async getPatientPrescriptionById(userId: string, patientId: string) {
+        let prescriptions;
+
+        const isPrimaryDoctor = await this.prismaService.patient.findFirst({
+            where:{
+                id: patientId,
+                primaryDoctors:{
+                    some:{
+                        id: userId
+                    }
+                }
             }
         });
+
+        if(isPrimaryDoctor){
+            prescriptions = await this.prismaService.prescription.findMany({
+                where: {
+                    patientId,
+                    status: PrescriptionStatus.ACTIVE,
+                },
+                select:{
+                    patientId: true,
+                    prescriptionType: true,
+                    status: true,
+                    instructionForOtherDoctor: true,
+                    date: true,
+                    attachments: true,
+                    medications: true
+                }
+            });
+        }else{
+            prescriptions = await this.prismaService.prescription.findMany({
+                where: {
+                    patientId,
+                    status: PrescriptionStatus.ACTIVE,
+                    displayable: true
+                },
+                select:{
+                    patientId: true,
+                    prescriptionType: true,
+                    status: true,
+                    instructionForOtherDoctor: true,
+                    date: true,
+                    attachments: true,
+                    medications: true
+                }
+            });
+        }
 
         const importantPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "IMPORTANT");
         const normalPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "NORMAL");
@@ -192,17 +225,59 @@ export class DoctorService {
         return {importantPrescriptions, normalPrescriptions};
     }
 
-    async getPatientMedicationsById(patientId: string) {
-        const prescriptions = await this.prismaService.prescription.findMany({
-            where: {
-                patientId: patientId,
-            },
-            select:{
-                medications: true
+    async getPatientMedicationsById(userId: string, patientId: string) {
+
+        
+        let prescriptions;
+
+        const isPrimaryDoctor = await this.prismaService.patient.findUnique({
+            where:{
+                id: patientId,
+                primaryDoctors:{
+                    some:{
+                        id: userId
+                    }
+                }
             }
         });
 
-        return this.ismedicationValid(prescriptions);
+        if(isPrimaryDoctor){
+            prescriptions = await this.prismaService.prescription.findMany({
+                where: {
+                    patientId,
+                    status: PrescriptionStatus.ACTIVE,
+                },
+                select:{
+                    patientId: true,
+                    prescriptionType: true,
+                    status: true,
+                    instructionForOtherDoctor: true,
+                    date: true,
+                    attachments: true,
+                    medications: true
+                }
+            });
+        }else{
+            prescriptions = await this.prismaService.prescription.findMany({
+                where: {
+                    patientId,
+                    status: PrescriptionStatus.ACTIVE,
+                    displayable: true
+                },
+                select:{
+                    patientId: true,
+                    prescriptionType: true,
+                    status: true,
+                    instructionForOtherDoctor: true,
+                    date: true,
+                    attachments: true,
+                    medications: true
+                }
+            });
+        }
+
+
+        return await this.ismedicationValid(prescriptions);
     }
 
     async addPrescriptions(userId: string, patientId: string, prescriptionDto: CreatePrescriptionDto) {
@@ -271,7 +346,7 @@ export class DoctorService {
 
     async getPatientReportsById(patientId: string, search: string="") {
         search = search?.trim();
-        if(search == ""){
+        if(search == "" || !search){
 
             const attachments = await this.prismaService.prescriptionAttachementElasticSearch.findMany({
                 where:{
@@ -439,21 +514,44 @@ export class DoctorService {
         return age;
     }
 
-    private ismedicationValid(prescriptions){
-        const allMedications = [];
-        prescriptions.map(prescription => {
-            prescription.medications.filter(medication => {
-                let today = new Date();
-                today.setHours(0, 0, 0, 0);
-                let date = new Date(medication.validTill);
-                date.setHours(0, 0, 0, 0);
+    private async ismedicationValid(prescriptions){
+        const validMediations = [];
+        const expiredMedications = [];
 
-                if (date >= today) {
-                    allMedications.push(medication);
+        prescriptions.forEach(async prescription => {
+            prescription.medications.forEach(async medication => {
+                if(medication.status === MedicationStatus.VALID){
+                    let today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    let validTillDate = new Date(medication.validTill);
+                    validTillDate.setHours(0, 0, 0, 0);
+
+                    if (validTillDate >= today) {
+                        const timeDiff = validTillDate.getTime() - today.getTime();
+                        const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24)); // Convert milliseconds to days
+
+                        medication.daysRemaining = daysRemaining;
+
+                        validMediations.push(medication);
+                    }else{
+                        await this.prismaService.medication.update({
+                            where: {
+                                id: medication.id
+                            },
+                            data: {
+                                status: MedicationStatus.EXPIRED
+                            }
+                        });
+                        expiredMedications.push(medication);
+                    }
+                }else{
+                    expiredMedications.push(medication);
                 }
-            })
+
+            });
         });
-        return allMedications;
+
+        return {validMediations, expiredMedications};
     }
 
     private async handelElasticSearchEntries(attachments: string[], patientId: string, prescriptionId: string){

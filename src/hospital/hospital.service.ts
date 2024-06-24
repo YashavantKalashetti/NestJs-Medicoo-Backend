@@ -537,10 +537,10 @@ export class HospitalService {
         return { doctors };
     }
 
-    async undertakePatientEmergencyAppointment(hospitalId: string, patientId: string) {
+    async undertakePatientEmergencyAppointment(hospitalId: string, patient_number: string) {
         const patient = await this.prismaService.patient.findUnique({
             where:{
-                id: patientId
+                patient_number
             }
         });
 
@@ -550,7 +550,7 @@ export class HospitalService {
 
         const appointment = await this.prismaService.appointment.findFirst({
             where:{
-                patientId: patientId,
+                id: patient.id,
                 hospitalId: null,
                 doctorId: null,
                 status: "EMERGENCY"
