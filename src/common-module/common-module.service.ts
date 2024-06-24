@@ -101,7 +101,7 @@ export class CommonModuleService {
 
         const { hospital } = await this.getHospitalById(hospitalId);
 
-        let emergencyMessage = `Emergency Consultation Request: Coordinates - Latitude: ${latitude}, Longitude: ${longitude}`;
+        let hospitalEmergencyMessage = `Emergency Consultation Request: Coordinates - Latitude: ${latitude}, Longitude: ${longitude}`;
 
         if(!patientId){
             patientId = "EMERGENCY PATIENT"
@@ -114,35 +114,18 @@ export class CommonModuleService {
                     id:true,
                     name:true,
                     contactNumber:true,
-                    parentId:true,
+                    parent:true,
                     patient_number:true,
                 }
             });
 
             if(user){
-                emergencyMessage = `Emergency Consultation Request from  Patient:  ${user.name} - ${user.contactNumber} - PatientId : ${user.patient_number}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
+                hospitalEmergencyMessage = `Emergency Consultation Request from  Patient:  ${user.name} - ${user.contactNumber} - PatientId : ${user.patient_number}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
                 const parntEmergencyMessage = `Patient ${user.name} - ${user.contactNumber} - PatientId : ${user.patient_number}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
 
-                if(user.parentId){
-                    try {
-                        const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/notification/sendEmergencyMessage`, {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({
-                                receiverId: user.parentId,
-                                status: 'EMERGENCY',
-                                message: parntEmergencyMessage,
-                                senderId: user.id
-                            })
-                        });
-
-                        if(response.ok){
-                            console.log('Parent Emergency Message Sent')
-                        }
-                    } catch (error) {
-                        console.log(error.message)
-                    }
-
+                if(user.parent && user.parent.id){
+                    await this.realTimeNotification(user.id, user.parent.id, parntEmergencyMessage);
+                    await this.whatsAppAlert(user.parent.contactNumber, parntEmergencyMessage);
                 }
 
                 const currentDayPrevAppointment = await this.prismaService.appointment.findFirst({
@@ -168,31 +151,18 @@ export class CommonModuleService {
                         }
                     });
                 }
+
             }
         }
 
-        try {
-            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/notification/sendEmergencyMessage`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    receiverId: hospitalId,
-                    status: 'EMERGENCY',
-                    message: emergencyMessage,
-                    senderId: patientId
-                })
-            });
-    
-    
-            if(!response.ok){
-                throw new BadRequestException("Error sending emergency consultation request. Please try again");
-            }
+        const hospitalNotificationStatus = await this.realTimeNotification(patientId, hospitalId, hospitalEmergencyMessage);
+        await this.whatsAppAlert(hospital.contactNumber, hospitalEmergencyMessage);
 
-            return { msg: "Emergency Consultation Request Sent" }
-        } catch (error) {
-            console.log(error.message)
-            return {msg :"Hosptal is currently offline. But the request is still notified Please try again later"};
+        if(!hospitalNotificationStatus){
+            return {msg :"Hospital is currently offline. But the request is still notified Please try again later"};
         }
+``
+        return { msg: "Emergency Consultation Request Sent" }
 
     }
 
@@ -339,6 +309,51 @@ export class CommonModuleService {
         delete hospital.password;
 
         return {hospital};
+    }
+
+
+    // Helpers
+    async realTimeNotification(senderId, receiverId, message){
+        try {
+            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/notification/sendEmergencyMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    receiverId,
+                    status: 'EMERGENCY',
+                    message,
+                    senderId
+                })
+            });
+
+            if(response.ok){
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.log(error.message)
+            return false;
+        }
+    }
+
+    async whatsAppAlert(receiverContactNumber, message){
+        try {
+            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/whatsapp/send`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    receiverContactNumber,
+                    message
+                })
+            })
+
+            if(!response.ok){
+                console.log("Could not send whats app message");
+            }
+
+        } catch (error) {
+            console.log("Error Could not send whats app message");
+        }
     }
     
 }
