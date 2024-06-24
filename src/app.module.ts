@@ -12,6 +12,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CloudinaryService } from './Services';
 import { EmailService } from './Services/email.service';
 import { RedisModule } from './redis/redis.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Global()
 @Module({
@@ -24,9 +26,28 @@ import { RedisModule } from './redis/redis.module';
       },
     }),
     EventEmitterModule.forRoot({}),
-    RedisModule
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000 * 1,
+        limit: 3,
+      },{
+        name: 'medium',
+        ttl: 1000 * 5,
+        limit: 10
+      },{
+        name: 'long',
+        ttl: 1000 * 30,
+        limit: 20
+      }
+    ]),
   ],
   controllers: [],
-  providers: [AuthModule,PrismaModule,ConfigModule, CloudinaryService, EmailService],
+  providers: [AuthModule,PrismaModule,ConfigModule, CloudinaryService, EmailService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    }
+  ],
 })
 export class AppModule {}
