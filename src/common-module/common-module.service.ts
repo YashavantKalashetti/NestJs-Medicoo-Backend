@@ -6,10 +6,14 @@ import { Redis } from 'ioredis';
 import { RedisClientType } from 'redis';
 import { RedisProvider } from 'src/redis/redis.provider';
 import exp from 'constants';
-import e from 'express';
+import e, { response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { stat } from 'fs';
 import { Prisma } from '@prisma/client';
+import { RealTimeNotification } from 'src/Services/RealTimeNotification';
+import { WhatsAppMessage } from 'src/Services/WhatsAppMessage';
+import { generate } from 'rxjs';
+import { generateOTP } from 'src/Services/GenerateOTP';
 @Injectable()
 export class CommonModuleService {
     constructor(private prismaService:PrismaService, private readonly redisProvider: RedisProvider, private configService: ConfigService){}
@@ -126,7 +130,7 @@ export class CommonModuleService {
                 const parntEmergencyMessage = `Patient ${user.name} - ${user.contactNumber} - PatientId : ${user.patient_number}. Previously located at : Latitude: ${latitude}, Longitude: ${longitude}`;
 
                 if(user.parent && user.parent.id){
-                    await this.realTimeNotification(user.id, user.parent.id, parntEmergencyMessage);
+                    await RealTimeNotification(user.id, user.parent.id, parntEmergencyMessage);
                     contacts.push(user.parent.contactNumber);
                 }
 
@@ -157,9 +161,9 @@ export class CommonModuleService {
             }
         }
 
-        const hospitalNotificationStatus = await this.realTimeNotification(patientId, hospitalId, hospitalEmergencyMessage);
+        const hospitalNotificationStatus = await RealTimeNotification(patientId, hospital.id, hospitalEmergencyMessage);
         contacts.push(hospital.contactNumber);
-        await this.whatsAppAlert(contacts, hospitalEmergencyMessage);
+        await WhatsAppMessage(contacts, hospitalEmergencyMessage);
 
         if(!hospitalNotificationStatus){
             return {msg :"Hospital is currently offline. But the request is still notified Please try again later"};
@@ -316,59 +320,28 @@ export class CommonModuleService {
 
 
     // Helpers
-    async realTimeNotification(senderId, receiverId, message){
+    
+    async verifyOTP(email: string, message: string){
         try {
-            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/notification/sendEmergencyMessage`, {
+            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/mail/sendEmail`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    receiverId,
-                    status: 'EMERGENCY',
+                    email,
                     message,
-                    senderId
+                    subject: 'OTP Verification'
                 })
             });
-
+    
             if(response.ok){
                 return true;
             }
-            return false;
-        } catch (error) {
-            console.log(error.message)
-            return false;
-        }
-    }
-
-    async whatsAppAlert(contacts, message){
-        try {
-
-            if(!contacts || contacts.length === 0){
-                return;
-            }
-
-            contacts = contacts.map((contact) => {
-                if(contact.length === 10){
-                    contact = `91${contact}`;
-                }
-                return contact;
-            });
-
-            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/whatsapp/send`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    contacts,
-                    message
-                })
-            })
-
-            if(!response.ok){
-                console.log("Could not send whats app message");
-            }
-
-        } catch (error) {
-            console.log("Error Could not send whats app message");
-        }
-    }
     
+            return false;
+        } catch (error) {
+            return false;
+        }
+
+    }
+
 }
