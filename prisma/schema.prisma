@@ -75,6 +75,7 @@ model Doctor {
   availableStartTime  String               @default("19:00")
   availableEndTime    String               @default("21:00")
   availableForConsult Boolean              @default(false)
+  languages           String[]
   specialization      DoctorSpecialization @default(GENERAL_PRACTITIONER)
   affiliatedHospitals Hospital[]           @relation("DoctorsHospitals")
   attendingHospital   Hospital?            @relation(fields: [attendingHospitalId], references: [id], onDelete: SetNull)

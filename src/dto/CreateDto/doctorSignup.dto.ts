@@ -46,5 +46,6 @@ export class DoctorSignupDto{
     @IsOptional()
     consultingFees: number;
 
+    languages: string[];
 
 }

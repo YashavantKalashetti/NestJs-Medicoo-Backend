@@ -96,4 +96,9 @@ export class DoctorController {
     }
 
 
+    @Patch('consulting-fee')
+    async setAppointmentFee(@GetUser('id') doctorId: string, @Body('consultingFees') consultingFees: number){
+        return this.doctorService.setAppointmentFee(doctorId, consultingFees);
+    }
+
 }

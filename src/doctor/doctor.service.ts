@@ -501,6 +501,24 @@ export class DoctorService {
         return { msg: "Doctor availability updated successfully" };
     }
 
+    async setAppointmentFee(doctorId: string, consultingFees: number){
+
+        const doctor = await this.prismaService.doctor.update({
+            where:{
+                id: doctorId
+            },
+            data:{
+                consultingFees
+            }
+        });
+
+        if(!doctor){
+            throw new InternalServerErrorException("Doctor fees could not be updated");
+        }
+
+        return { msg: "Doctor fees updated successfully" };
+    }
+
     // helpers
 
     private calculateYears(dateOfBirth: Date): number {

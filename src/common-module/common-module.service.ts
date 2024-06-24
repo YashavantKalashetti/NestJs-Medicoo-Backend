@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { stat } from 'fs';
 import { Prisma } from '@prisma/client';
 import { RealTimeNotification } from 'src/Services/RealTimeNotification';
-import { WhatsAppMessage } from 'src/Services/WhatsAppMessage';
+import { WhatsAppMessage } from 'src/Services/WhatsAppNotification';
 import { generate } from 'rxjs';
 import { generateOTP } from 'src/Services/GenerateOTP';
 @Injectable()
