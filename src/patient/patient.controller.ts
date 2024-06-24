@@ -97,4 +97,9 @@ export class PatientController {
         return this.patientService.getChildEmergencyAppointments(userId, patientId);
     }
 
+    @Patch('doctorAccess')
+    async updatePrimaryDoctorAccess(@GetUser('id') userId: string, @Body() body){
+        return this.patientService.updatePrimaryDoctorAccess(userId, body);
+    }
+
 }

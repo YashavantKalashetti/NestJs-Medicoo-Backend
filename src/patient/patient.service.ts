@@ -461,6 +461,52 @@ export class PatientService {
         return existingAppointments;
     }
 
+    async updatePrimaryDoctorAccess(userId: string, body: any){
+        const doctor = await this.prismaService.doctor.findUnique({
+            where: {
+                doctor_number: body.doctor_number
+            }
+        });
+
+        if(!doctor){
+            throw new NotFoundException("Doctor not found");
+        }
+        
+        if(body.access == "GRANT"){
+            await this.prismaService.patient.update({
+                where: {
+                    id: userId
+                },
+                data: {
+                    primaryDoctors: {
+                        connect: {
+                            id: doctor.id
+                        }
+                    }
+                }
+            });
+        }else if(body.access == "REVOKE"){
+            await this.prismaService.patient.update({
+                where: {
+                    id: userId
+                },
+                data: {
+                    primaryDoctors: {
+                        disconnect: {
+                            id: doctor.id
+                        }
+                    }
+                }
+            });
+        }else{
+            throw new BadRequestException("Invalid access type");
+        }
+
+
+        return {msg: "Primary Doctor updated successfully"};
+
+    }
+
     // Helpers
 
     private async ismedicationValid(prescriptions){

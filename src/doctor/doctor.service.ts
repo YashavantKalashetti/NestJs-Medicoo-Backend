@@ -170,23 +170,54 @@ export class DoctorService {
         return {patient};
     }
     
-    async getPatientPrescriptionById(patientId: string) {
-        const prescriptions = await this.prismaService.prescription.findMany({
-            where: {
-                patientId,
-                status: PrescriptionStatus.ACTIVE,
-                displayable: true
-            },
-            select:{
-                patientId: true,
-                prescriptionType: true,
-                status: true,
-                instructionForOtherDoctor: true,
-                date: true,
-                attachments: true,
-                medications: true
+    async getPatientPrescriptionById(userId: string, patientId: string) {
+        let prescriptions;
+
+        const isPrimaryDoctor = await this.prismaService.patient.findFirst({
+            where:{
+                id: patientId,
+                primaryDoctors:{
+                    some:{
+                        id: userId
+                    }
+                }
             }
         });
+
+        if(isPrimaryDoctor){
+            prescriptions = await this.prismaService.prescription.findMany({
+                where: {
+                    patientId,
+                    status: PrescriptionStatus.ACTIVE,
+                },
+                select:{
+                    patientId: true,
+                    prescriptionType: true,
+                    status: true,
+                    instructionForOtherDoctor: true,
+                    date: true,
+                    attachments: true,
+                    medications: true
+                }
+            });
+        }else{
+            prescriptions = await this.prismaService.prescription.findMany({
+                where: {
+                    patientId,
+                    status: PrescriptionStatus.ACTIVE,
+                    displayable: true
+                },
+                select:{
+                    patientId: true,
+                    prescriptionType: true,
+                    status: true,
+                    instructionForOtherDoctor: true,
+                    date: true,
+                    attachments: true,
+                    medications: true
+                }
+            });
+        }
 
         const importantPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "IMPORTANT");
         const normalPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "NORMAL");
@@ -194,16 +225,56 @@ export class DoctorService {
         return {importantPrescriptions, normalPrescriptions};
     }
 
-    async getPatientMedicationsById(patientId: string) {
-        const prescriptions = await this.prismaService.prescription.findMany({
-            where: {
-                patientId: patientId,
-                displayable: true,
-            },
-            select:{
-                medications: true
+    async getPatientMedicationsById(userId: string, patientId: string) {
+
+        
+        let prescriptions;
+
+        const isPrimaryDoctor = await this.prismaService.patient.findUnique({
+            where:{
+                id: patientId,
+                primaryDoctors:{
+                    some:{
+                        id: userId
+                    }
+                }
             }
         });
+
+        if(isPrimaryDoctor){
+            prescriptions = await this.prismaService.prescription.findMany({
+                where: {
+                    patientId,
+                    status: PrescriptionStatus.ACTIVE,
+                },
+                select:{
+                    patientId: true,
+                    prescriptionType: true,
+                    status: true,
+                    instructionForOtherDoctor: true,
+                    date: true,
+                    attachments: true,
+                    medications: true
+                }
+            });
+        }else{
+            prescriptions = await this.prismaService.prescription.findMany({
+                where: {
+                    patientId,
+                    status: PrescriptionStatus.ACTIVE,
+                    displayable: true
+                },
+                select:{
+                    patientId: true,
+                    prescriptionType: true,
+                    status: true,
+                    instructionForOtherDoctor: true,
+                    date: true,
+                    attachments: true,
+                    medications: true
+                }
+            });
+        }
 
 
         return await this.ismedicationValid(prescriptions);
