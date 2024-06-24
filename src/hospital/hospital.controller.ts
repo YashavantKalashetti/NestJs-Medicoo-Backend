@@ -94,7 +94,7 @@ export class HospitalController {
         return this.hospitalService.getPatient(hospitalId, patientId);
     }
 
-    @Get('patient-appointments/:patientId')
+    @Get('patients/:patientId/appointments')
     async getPatientAppointments(@GetUser('id') hospitalId: string, @Param('patientId') patientId: string){
         return this.hospitalService.getPatientAppointmentsInHospital(hospitalId, patientId);
     }
@@ -105,9 +105,9 @@ export class HospitalController {
         return this.hospitalService.getDoctorsForEmergency(hospitalId, specialization);
     }
 
-    @Get('underTake-patientEmergencyAppointment/:id')
-    async underTakePatientEmergencyAppointment(@GetUser('id') hospitalId: string, @Param('id') patientId: string){
-        return this.hospitalService.undertakePatientEmergencyAppointment(hospitalId, patientId);
+    @Get('patientEmergencyAppointment/:patient_number')
+    async underTakePatientEmergencyAppointment(@GetUser('id') hospitalId: string, @Param('patient_number') patient_number: string){
+        return this.hospitalService.undertakePatientEmergencyAppointment(hospitalId, patient_number);
     }
 
     @Patch('setAvailability')

@@ -100,6 +100,8 @@ export class CommonModuleService {
         }
 
         const { hospital } = await this.getHospitalById(hospitalId);
+        // Whtsapp Alert contacts
+        const contacts: String[] = [];
 
         let hospitalEmergencyMessage = `Emergency Consultation Request: Coordinates - Latitude: ${latitude}, Longitude: ${longitude}`;
 
@@ -125,7 +127,7 @@ export class CommonModuleService {
 
                 if(user.parent && user.parent.id){
                     await this.realTimeNotification(user.id, user.parent.id, parntEmergencyMessage);
-                    await this.whatsAppAlert(user.parent.contactNumber, parntEmergencyMessage);
+                    contacts.push(user.parent.contactNumber);
                 }
 
                 const currentDayPrevAppointment = await this.prismaService.appointment.findFirst({
@@ -156,7 +158,8 @@ export class CommonModuleService {
         }
 
         const hospitalNotificationStatus = await this.realTimeNotification(patientId, hospitalId, hospitalEmergencyMessage);
-        await this.whatsAppAlert(hospital.contactNumber, hospitalEmergencyMessage);
+        contacts.push(hospital.contactNumber);
+        await this.whatsAppAlert(contacts, hospitalEmergencyMessage);
 
         if(!hospitalNotificationStatus){
             return {msg :"Hospital is currently offline. But the request is still notified Please try again later"};
@@ -336,13 +339,25 @@ export class CommonModuleService {
         }
     }
 
-    async whatsAppAlert(receiverContactNumber, message){
+    async whatsAppAlert(contacts, message){
         try {
+
+            if(!contacts || contacts.length === 0){
+                return;
+            }
+
+            contacts = contacts.map((contact) => {
+                if(contact.length === 10){
+                    contact = `91${contact}`;
+                }
+                return contact;
+            });
+
             const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/whatsapp/send`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    receiverContactNumber,
+                    contacts,
                     message
                 })
             })

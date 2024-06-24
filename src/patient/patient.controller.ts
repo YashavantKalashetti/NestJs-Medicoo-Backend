@@ -61,7 +61,7 @@ export class PatientController {
         return this.patientService.bookAppointment(userId,appointmentDto);
     }
 
-    @Post('appointment/:id/review')
+    @Post('appointments/:id/review')
     async reviewAppointment(@GetUser('id') userId: string, @Body() appointmentDto: CreateAppointmentDto, @Body('rating') rating: number, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) appointmentId: string){
         return this.patientService.reviewAppointment(userId,appointmentId, appointmentDto, rating);
     }
@@ -92,7 +92,7 @@ export class PatientController {
         return this.patientService.getChildDetails(userId, patientId);
     }
 
-    @Get('childrens/:id/apointments')
+    @Get('childrens/:id/appointments')
     async getChildEmergencyAppointments(@GetUser('id') userId: string, @Param('id', new ParseUUIDPipe({errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE})) patientId: string){
         return this.patientService.getChildEmergencyAppointments(userId, patientId);
     }
