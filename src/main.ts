@@ -5,6 +5,7 @@ import * as csurf from 'csurf';
 import * as cookieParser from 'cookie-parser';
 import { ConfigService } from '@nestjs/config';
 import { AllExceptionsFilter } from './auth/customDecorator/AllExceptionFilters';
+import { TrimAndFormatPipe } from './auth/customDecorator/TrimAndFormatPipe';
 
 
 async function bootstrap() {

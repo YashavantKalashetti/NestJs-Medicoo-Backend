@@ -1,7 +1,5 @@
 import { Body, ClassSerializerInterceptor, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthService, ROLES } from './auth.service';
-import { Body, ClassSerializerInterceptor, Controller, Get, HttpCode, HttpStatus, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { AuthService } from './auth.service';
 import { SigninDto, PatientSignupDto, DoctorSignupDto, HospitalSignupDto } from '../dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService, multerOptions } from 'src/Services';
@@ -17,7 +15,7 @@ export class AuthController {
 
     @Roles([ROLES.DOCTOR, ROLES.PATIENT, ROLES.HOSPITAL])
     @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Get('get-csrf-token')
+    @Get('csrf-token')
     async getCsrfToken(@Req() req){
         return {csrfToken: req.csrfToken};
     }
