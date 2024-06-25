@@ -6,6 +6,7 @@ import { CloudinaryService, multerOptions } from 'src/Services';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from './JwtStrategy';
 import { Roles } from './customDecorator';
+import { EmailInputDto } from 'src/dto/CreateDto/emailInput.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)  
 @Controller('auth')
@@ -77,6 +78,11 @@ export class AuthController {
     @Post('hospital/signup')
     async hospitalSignup(@Body() hospitalSignupDto: HospitalSignupDto){
         return this.authService.hospitalSignup(hospitalSignupDto);
+    }
+
+    @Get('otp')
+    async getOtp(@Body() receiverEmail: string){
+        return this.authService.getOtp(receiverEmail);
     }
 
 }

@@ -320,28 +320,5 @@ export class CommonModuleService {
 
 
     // Helpers
-    
-    async verifyOTP(email: string, message: string){
-        try {
-            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/mail/sendEmail`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    email,
-                    message,
-                    subject: 'OTP Verification'
-                })
-            });
-    
-            if(response.ok){
-                return true;
-            }
-    
-            return false;
-        } catch (error) {
-            return false;
-        }
-
-    }
 
 }

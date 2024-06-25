@@ -8,6 +8,9 @@ import { SigninDto, PatientSignupDto, DoctorSignupDto, HospitalSignupDto } from 
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { UserEntity } from '../dto/UserEntity.dto';
 import { DoctorSpecialization, HospitalSpeciality } from '@prisma/client';
+import { EmailInputDto } from 'src/dto/CreateDto/emailInput.dto';
+import { EmailService } from 'src/Services';
+import { generateOTP } from 'src/Services/GenerateOTP';
 
 export enum ROLES {
     PATIENT = 'PATIENT',
@@ -192,6 +195,23 @@ export class AuthService {
             console.log(error.message)
             throw error;
         }
+    }
+
+    async getOtp(receiverEmail: string){
+
+        const otp = generateOTP();
+
+        const emailInputDto: EmailInputDto = {
+            email: receiverEmail,
+            message: `Your OTP to verify your Medicoo account is ${otp}. Please use it to sign up.`,
+            subject: 'Enter your OTP and Confirm Your Medicoo Journey!🌟'
+        }
+
+        const isEmailSent = await EmailService(emailInputDto);
+        if(isEmailSent){
+            return {msg: "Email sent"};
+        }
+        return {msg: "Email could not be sent"};
     }
 
     // Helpers
