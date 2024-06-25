@@ -207,6 +207,8 @@ export class AuthService {
             subject: 'Enter your OTP and Confirm Your Medicoo Journey!🌟'
         }
 
+        console.log(emailInputDto);
+
         const isEmailSent = await EmailService(emailInputDto);
         if(isEmailSent){
             return {msg: "Email sent"};

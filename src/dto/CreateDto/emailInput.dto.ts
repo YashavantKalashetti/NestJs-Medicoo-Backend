@@ -1,9 +1,9 @@
 import { Appointment, AppointmentMode, AppointmentStatus } from "@prisma/client";
-import { IsDateString, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsDateString, IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { App } from "supertest/types";
 
 export class EmailInputDto {
-    @IsString()
+    @IsEmail()
     @IsNotEmpty()
     email: string;
 

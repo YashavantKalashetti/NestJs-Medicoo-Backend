@@ -43,7 +43,7 @@ import { APP_GUARD } from '@nestjs/core';
     ]),
   ],
   controllers: [],
-  providers: [AuthModule,PrismaModule,ConfigModule, CloudinaryService, EmailService,
+  providers: [AuthModule,PrismaModule,ConfigModule, CloudinaryService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

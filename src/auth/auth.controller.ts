@@ -81,7 +81,7 @@ export class AuthController {
     }
 
     @Get('otp')
-    async getOtp(@Body() receiverEmail: string){
+    async getOtp(@Body('receiverEmail') receiverEmail: string){
         return this.authService.getOtp(receiverEmail);
     }
 

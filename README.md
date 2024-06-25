@@ -60,22 +60,12 @@ This project delivers a comprehensive solution for managing medical information,
 
 ---
 
-## License
-[MIT](LICENSE)
-
----
-
-## Contact
-For more information, please contact [Yashavant Kalashetti](mailto:yashwantkalashetti44@gmail.com).
-
----
-
 <div align="center" style="display: flex; align-items: center; justify-content: center; gap: 20px;">
   <a href="http://nestjs.com/" target="blank">
-    <img src="https://nestjs.com/img/logo-small.svg" width="100" alt="Nest Logo" />
+    <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" />
   </a>
   <a href="https://nodejs.org/">
-    <img src="https://avatars.githubusercontent.com/u/9950313?s=200&v=4" width="100" alt="Node.js logo">
+    <img src="https://avatars.githubusercontent.com/u/9950313?s=200&v=4" width="120" alt="Node.js logo">
   </a>
 </div>
 
@@ -100,8 +90,7 @@ This project demonstrates the efficient development of a microservice using Nest
 
 1. Clone the repository: 
 ```bash
-https://github.com/YashavantKalashetti/NestJs-Medicoo-Backend.git
-cd server
+$ git clone https://github.com/YashavantKalashetti/NestJs-Medicoo-Backend.git
 ```
 
 2. Install dependencies
@@ -122,9 +111,25 @@ $ npm run start
 
 # watch mode
 $ npm run start:dev
-
-# production mode
-$ npm run start:prod
 ```
 
-**Note:** Properly configure .env file and change database(PostgreSQL, MongoDB) links, Redis link, Cloudinary link and Stripe(Payment links) and Elastic Search API Link.
+To start the MicroService_Server(Helper Server) in development mode, navigate to the [``Microservice-Server``](https://github.com/YashavantKalashetti/NestJs-Medicoo-Backend/tree/main/Microservice-Server) directory and run:
+
+```bash
+$ npm install
+$ node index.js 
+```
+
+**Note:** Properly configure .env file and change database(PostgreSQL, 
+
+MongoDB) links, Redis link, Cloudinary link and Stripe(Payment links) and Elastic Search API Link.
+
+---
+
+## License
+[MIT](LICENSE)
+
+---
+
+## Contact
+For more information, please contact [Yashavant Kalashetti](mailto:yashwantkalashetti44@gmail.com).
