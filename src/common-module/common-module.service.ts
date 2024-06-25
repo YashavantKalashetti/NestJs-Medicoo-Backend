@@ -18,6 +18,21 @@ import { generateOTP } from 'src/Services/GenerateOTP';
 export class CommonModuleService {
     constructor(private prismaService:PrismaService, private readonly redisProvider: RedisProvider, private configService: ConfigService){}
 
+
+    async test(){
+        await this.prismaService.doctor.updateMany({
+            data:{
+                avatar: "https://res.cloudinary.com/dobgzdpic/image/upload/v1719312099/DoctorDefault_rbglsf.png"
+            }
+        })
+
+        await this.prismaService.patient.updateMany({
+            data:{
+                avatar: "https://res.cloudinary.com/dobgzdpic/image/upload/v1719312772/vrg1d5ltsqfbrx11v5hn.png"
+            }
+        })
+    }
+
     async getDetailsOfPlatform(){
         const doctorsCount = await this.prismaService.doctor.count();
         const hospitalsCount = await this.prismaService.hospital.count();
@@ -187,7 +202,7 @@ export class CommonModuleService {
                 return {doctors: JSON.parse(cachedData)};
             }
 
-            console.log("Page: ", currentPage, "Specialization: ", specialization, "PerPage: ", currentPerPage)
+            // console.log("Page: ", currentPage, "Specialization: ", specialization, "PerPage: ", currentPerPage)
 
             const doctors = await this.prismaService.doctor.findMany({
                 where:{
@@ -200,11 +215,14 @@ export class CommonModuleService {
                 select:{
                     id:true,
                     name:true,
+                    doctor_number:true,
                     specialization:true,
                     rating:true,
                     avatar:true,
-                    consultingFees:true,
                     availableForConsult:true,
+                    education:true,
+                    languages:true,
+                    practicingSince:true,
                 },  take: currentPerPage,
             });
 

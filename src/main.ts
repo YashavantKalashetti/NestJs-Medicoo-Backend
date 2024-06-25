@@ -20,7 +20,7 @@ async function bootstrap() {
   });
   const configService: ConfigService = app.get(ConfigService);
   // app.useGlobalFilters(new AllExceptionsFilter());
-  app.use(csurf({cookie: true}));
+  // app.use(csurf({cookie: true}));
   await app.listen(configService.get('PORT'));
 }
 bootstrap();

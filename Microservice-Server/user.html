@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dedicated Messages</title>
+</head>
+<body>
+    <h1>Dedicated Messages</h1>
+    <input type="text" id="targetUserId" placeholder="Target User ID">
+    <button onclick="sendMessage()">Send Message</button>
+    <div id="dedicatedMessages"></div>
+
+    <script>
+        const userId = prompt('Enter your User ID:');
+        const dedicatedMessagesSocket = new WebSocket(`ws://localhost:8080/dedicatedMessages?userId=${userId}`);
+
+        dedicatedMessagesSocket.onopen = () => {
+            console.log('Connected to the Dedicated Messages WebSocket server');
+        };
+
+        dedicatedMessagesSocket.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            const dedicatedMessagesDiv = document.getElementById('dedicatedMessages');
+            const messageElement = document.createElement('p');
+            messageElement.textContent = `From ${message.from}: ${message.data}`;
+            dedicatedMessagesDiv.appendChild(messageElement);
+        };
+
+        dedicatedMessagesSocket.onclose = () => {
+            console.log('Disconnected from the Dedicated Messages WebSocket server');
+        };
+
+        function sendMessage() {
+            const targetUserId = document.getElementById('targetUserId').value;
+            const messageInput = prompt('Enter your message:');
+            const message = {
+                targetUserId: targetUserId,
+                data: messageInput
+            };
+            dedicatedMessagesSocket.send(JSON.stringify(message));
+        }
+    </script>
+</body>
+</html>

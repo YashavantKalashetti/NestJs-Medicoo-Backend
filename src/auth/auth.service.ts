@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma/prisma.service';
 
 import * as argon2 from "argon2";
@@ -203,17 +203,25 @@ export class AuthService {
 
         const emailInputDto: EmailInputDto = {
             email: receiverEmail,
-            message: `Your OTP to verify your Medicoo account is ${otp}. Please use it to sign up.`,
-            subject: 'Enter your OTP and Confirm Your Medicoo Journey!🌟'
+            subject: 'Verify OTP and Confirm Your Medicoo Journey!🌟',
+            message: `Hello,
+Thank you for signing up for Medicoo! Your OTP for verifying your account is ${otp}. Please use this code to complete the signup process. Do not share OTP with others.
+
+Medicoo is dedicated to providing you with a seamless healthcare experience. Our team is committed to ensuring your health and well-being with our innovative platform.
+
+If you have any questions or need assistance, feel free to reach out to us at support@medicoo.com.
+
+Best regards,
+The Medicoo Team`
         }
 
-        console.log(emailInputDto);
+        // console.log(emailInputDto);
 
         const isEmailSent = await EmailService(emailInputDto);
         if(isEmailSent){
-            return {msg: "Email sent"};
+            return {msg: "Email has been to your email.", otp};
         }
-        return {msg: "Email could not be sent"};
+        throw new InternalServerErrorException('Email could not be sent');
     }
 
     // Helpers

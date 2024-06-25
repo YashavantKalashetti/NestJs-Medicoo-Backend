@@ -8,10 +8,10 @@ export class CommonModuleController {
 
     constructor(private commonModuleService: CommonModuleService,){}
 
-    // @Post("test")
-    // async test(@Body('id') identity, @Body('name') name, @Body('age') age){
-    //     console.log(identity, name, age);
-    // }
+    @Post("test")
+    async test1(){
+        await this.commonModuleService.test();
+    }
 
     @Get('/one')
     async test(){

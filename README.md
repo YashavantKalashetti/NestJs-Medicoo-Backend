@@ -62,10 +62,10 @@ This project delivers a comprehensive solution for managing medical information,
 
 <div align="center" style="display: flex; align-items: center; justify-content: center; gap: 20px;">
   <a href="http://nestjs.com/" target="blank">
-    <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" />
+    <img src="https://nestjs.com/img/logo-small.svg" width="130" alt="Nest Logo" />
   </a>
   <a href="https://nodejs.org/">
-    <img src="https://avatars.githubusercontent.com/u/9950313?s=200&v=4" width="120" alt="Node.js logo">
+    <img src="https://avatars.githubusercontent.com/u/9950313?s=200&v=4" width="130" alt="Node.js logo">
   </a>
 </div>
 

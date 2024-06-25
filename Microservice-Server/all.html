@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Messages</title>
+</head>
+<body>
+    <h1>All Messages</h1>
+    <div id="allMessages"></div>
+
+    <script>
+        const userId = prompt('Enter your User ID:');
+        const allMessagesSocket = new WebSocket(`ws://localhost:8080/allMessages?userId=${userId}`);
+
+        allMessagesSocket.onopen = () => {
+            console.log('Connected to the All Messages WebSocket server');
+        };
+
+        allMessagesSocket.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            const allMessagesDiv = document.getElementById('allMessages');
+            const messageElement = document.createElement('p');
+            messageElement.textContent = `From ${message.from}: ${message.data}`;
+            allMessagesDiv.appendChild(messageElement);
+        };
+
+        allMessagesSocket.onclose = () => {
+            console.log('Disconnected from the All Messages WebSocket server');
+        };
+    </script>
+</body>
+</html>
