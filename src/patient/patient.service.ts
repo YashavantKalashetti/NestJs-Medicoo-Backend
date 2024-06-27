@@ -193,44 +193,70 @@ export class PatientService {
         return {urls};
     }
 
-    async bookAppointment(userId: string, appointmentDto: CreateAppointmentDto, status?: AppointmentStatus){
+    async bookAppointment(userId: string, appointmentDto: CreateAppointmentDto, status?: AppointmentStatus) {
         
         const doctor = await this.prismaService.doctor.findUnique({
-            where:{
+            where: {
                 id: appointmentDto.doctorId
+            },
+            select: {
+                id: true,
+                name: true,
+                availableStartTime: true,
+                availableEndTime: true,
             }
         });
+
+        const appointmentTime = new Date(appointmentDto.date);
+        const [hour, minute] = appointmentDto.slotTime.split(':').map(Number);
+        appointmentTime.setHours(hour, minute, 0, 0);
+
+        // check if the given time is in doctor available time
+        const isTimeSlotValid = await this.isDoctorAvailableDuringGivenTimeSlot(doctor, appointmentTime);
+
+        if (!isTimeSlotValid) {
+            throw new BadRequestException('Doctor is not available during the given time slot');
+        }
+
         if (!doctor) {
-          throw new BadRequestException('Doctor not found');
+            throw new BadRequestException('Doctor not found');
         }
     
-        const nextAvailableSlot = await this.isSlotAvailable(doctor);
-        if (!nextAvailableSlot) {
-          throw new BadRequestException('Appointment slot is not available');
+        const isSlotBooked = await this.isSlotBooked(appointmentDto.doctorId, appointmentTime);
+    
+        if (isSlotBooked.avilability) {
+            throw new BadRequestException('Slot is already booked');
         }
-
-        // console.log("Slot Available: ",nextAvailableSlot)
-
-        // await this.prismaService.appointment.deleteMany()
+    
     
         const appointment = await this.prismaService.appointment.create({
             data: {
+                doctorId: appointmentDto.doctorId,
+                patientId: userId,
+                date: appointmentTime,
                 reason: appointmentDto.reason,
-                date: nextAvailableSlot,
-                patient:{
-                    connect:{
-                        id: userId
-                    }
-                },
-                doctor:{
-                    connect:{
-                        id: appointmentDto.doctorId
-                    }
-                }
             },
         });
     
-        return appointment;
+        return { appointment };
+    }
+
+    private async isSlotBooked(doctorId: string, appointmentTime){
+
+        const currentTime = new Date();
+        
+        if(currentTime > appointmentTime){
+            throw new BadRequestException("You cannot book previous day appointments")
+        }
+    
+        const appointment = await this.prismaService.appointment.findFirst({
+          where: {
+            doctorId,
+            date: new Date(appointmentTime),
+          },
+        });
+
+        return {avilability : appointment !== null};
         
     }
 
@@ -507,6 +533,7 @@ export class PatientService {
 
     }
 
+
     // Helpers
 
     private async ismedicationValid(prescriptions){
@@ -549,10 +576,7 @@ export class PatientService {
         return {validMediations, expiredMedications};
     }
 
-    async isDoctorAvailable(doctor, requestedStartTime: Date, requestedEndTime: Date): Promise<boolean> {
-    
-        const availableStartTime = new Date(requestedStartTime);
-        const availableEndTime = new Date(requestedEndTime);
+    private isDoctorAvailableDuringGivenTimeSlot(doctor, requestedStartTime: Date): boolean{
 
         const doctorStartDateTime = new Date();
         doctorStartDateTime.setHours(parseInt(doctor.availableStartTime.split(':')[0]), parseInt(doctor.availableStartTime.split(':')[1]), 0, 0);
@@ -560,55 +584,13 @@ export class PatientService {
         const doctorEndDateTime = new Date();
         doctorEndDateTime.setHours(parseInt(doctor.availableEndTime.split(':')[0]), parseInt(doctor.availableEndTime.split(':')[1]), 0, 0);
 
-        return availableStartTime >= doctorStartDateTime && availableEndTime <= doctorEndDateTime;
-    }
-    
-    async isSlotAvailable(doctor: Doctor) {
-        // Get current Indian time
-        const indianTime = new Date();
-        indianTime.setUTCHours(indianTime.getUTCHours() + 5); // Add 5 hours for Indian Standard Time
-        indianTime.setUTCMinutes(indianTime.getUTCMinutes() + 30); // Add additional 30 minutes for Indian Standard Time
-    
-        const {startOfToday, endOfToday} = this.IndianTime();
-    
-        // Fetch existing appointments for the doctor for today
-        const existingAppointments = await this.prismaService.appointment.findMany({
-            where: {
-                AND: [
-                    { doctorId: doctor.id },
-                    { date: { gte: startOfToday, lt: endOfToday } }
-                ]
-            },
-            orderBy: {
-                date: 'desc'
-            }
-        });
-    
-        // Parse doctor's available start and end times to Indian time
-        const [startHour, startMinute] = doctor.availableStartTime.split(':').map(Number);
-        const [endHour, endMinute] = doctor.availableEndTime.split(':').map(Number);
-    
-        const doctorStartDateTime = new Date(indianTime);
-        doctorStartDateTime.setUTCHours(startHour, startMinute, 0, 0); // Set doctor's start time in Indian time
-    
-        const doctorEndDateTime = new Date(indianTime);
-        doctorEndDateTime.setUTCHours(endHour, endMinute, 0, 0); // Set doctor's end time in Indian time
-    
-        // If no appointments exist for today, return the doctor's start time
-        if (existingAppointments.length === 0) {
-            return doctorStartDateTime;
-        }
-    
-        // Calculate end time of last appointment
-        const lastAppointmentEndTime = new Date(existingAppointments[0].date);
-        lastAppointmentEndTime.setMinutes(lastAppointmentEndTime.getMinutes() + 15); // Assuming appointments are 20 minutes long
-    
-        // If the last appointment ends before the doctor's end time, return its end time
-        if (lastAppointmentEndTime <= doctorEndDateTime) {
-            return lastAppointmentEndTime;
-        }
-    
-        return null; // No available slot
+
+        // console.log(doctorStartDateTime)
+        // console.log(doctorEndDateTime)
+        // console.log(requestedStartTime)
+
+        return requestedStartTime >= doctorStartDateTime && requestedStartTime <= doctorEndDateTime;
+
     }
 
     private IndianTime(){

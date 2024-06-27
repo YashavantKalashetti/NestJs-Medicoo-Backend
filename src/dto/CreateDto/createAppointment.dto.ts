@@ -1,5 +1,5 @@
 import { Appointment, AppointmentMode, AppointmentStatus } from "@prisma/client";
-import { IsDateString, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsDate, IsDateString, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { App } from "supertest/types";
 
 export class CreateAppointmentDto {
@@ -14,6 +14,9 @@ export class CreateAppointmentDto {
     @IsDateString()
     @IsNotEmpty()
     date: string;
+
+    @IsNotEmpty()
+    slotTime: string;
 
     @IsString()
     @IsNotEmpty()

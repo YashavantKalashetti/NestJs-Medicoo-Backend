@@ -78,7 +78,7 @@ async function InsertElasticSerachIndex(databaseId, patientId, documentText){
 }
 
 
-router.post('/med-reports', async (req, res) => {
+router.get('/med-reports', async (req, res) => {
 
     // console.log("received request")
 
@@ -119,7 +119,7 @@ router.post('/med-reports', async (req, res) => {
         return res.json({ files });
     } catch (error) {
         console.error('Error searching documents in ElasticSearch:', error.message);
-        return res.status(500).send('Error searching documents in ElasticSearch.');
+        return res.status(500).json({msg: 'Error searching documents in ElasticSearch.'});
     }
 
 })

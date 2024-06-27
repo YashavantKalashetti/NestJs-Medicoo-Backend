@@ -19,20 +19,6 @@ export class CommonModuleService {
     constructor(private prismaService:PrismaService, private readonly redisProvider: RedisProvider, private configService: ConfigService){}
 
 
-    async test(){
-        await this.prismaService.doctor.updateMany({
-            data:{
-                avatar: "https://res.cloudinary.com/dobgzdpic/image/upload/v1719312099/DoctorDefault_rbglsf.png"
-            }
-        })
-
-        await this.prismaService.patient.updateMany({
-            data:{
-                avatar: "https://res.cloudinary.com/dobgzdpic/image/upload/v1719312772/vrg1d5ltsqfbrx11v5hn.png"
-            }
-        })
-    }
-
     async getDetailsOfPlatform(){
         const doctorsCount = await this.prismaService.doctor.count();
         const hospitalsCount = await this.prismaService.hospital.count();
@@ -183,7 +169,7 @@ export class CommonModuleService {
         if(!hospitalNotificationStatus){
             return {msg :"Hospital is currently offline. But the request is still notified Please try again later"};
         }
-``
+
         return { msg: "Emergency Consultation Request Sent" }
 
     }
@@ -301,11 +287,15 @@ export class CommonModuleService {
             }
         });
 
+        const { startOfToday } = this.IndianTime();
+
+        const { availableSlotsByDate }  = await this.getDoctorAvailableTimeSlots(id, new Date(startOfToday))
+
         if (!doctor) {
             throw new BadRequestException('Doctor not found');
         }
 
-        return {doctor};
+        return {doctor, availableSlotsByDate};
     }
 
     async getHospitalById(id: string){
@@ -336,7 +326,171 @@ export class CommonModuleService {
         return {hospital};
     }
 
+    async getDoctorAvailableTimeSlots(doctorId: string, date: Date) {
+        const doctor = await this.prismaService.doctor.findUnique({
+            where: {
+                id: doctorId
+            },
+            select: {
+                id: true,
+                availableStartTime: true,
+                availableEndTime: true,
+            }
+        });
+    
+        if (!doctor) {
+            throw new BadRequestException('Doctor not found');
+        }
+    
+        const timeSlots = this.get15MinuteIntervals(doctor.availableStartTime, doctor.availableEndTime);
+    
+        // Get today and the next 4 days excluding Sundays
+        const dates = [];
+        let currentDate = new Date();
+        while (dates.length < 5) {
+            if (currentDate.getDay() !== 0) { // 0 represents Sunday
+                dates.push(new Date(currentDate));
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+    
+        const availableSlotsByDate = [];
+    
+        for (const date of dates) {
+            const startOfDay = new Date(date);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(date);
+            endOfDay.setHours(23, 59, 59, 999);
+    
+            const appointments = await this.prismaService.appointment.findMany({
+                where: {
+                    doctorId,
+                    date: {
+                        gte: startOfDay,
+                        lte: endOfDay,
+                    },
+                },
+                select: {
+                    date: true,
+                },
+            });
+    
+            const bookedTimes = new Set(
+                appointments.map(appointment =>
+                    this.formatTime(new Date(appointment.date))
+                )
+            );
+    
+            const availableSlots = timeSlots.map(time => ({
+                time,
+                isBooked: bookedTimes.has(time),
+            }));
+    
+            availableSlotsByDate.push({
+                date: date.toISOString().split('T')[0], // Format date as YYYY-MM-DD
+                availableSlots
+            });
+        }
+    
+        return { availableSlotsByDate };
+    }
+    
+    
+    
+    // async getDoctorAvailableTimeSlots(doctorId: string, date: Date) {
+    //     const doctor = await this.prismaService.doctor.findUnique({
+    //         where: {
+    //             id: doctorId
+    //         },
+    //         select: {
+    //             id: true,
+    //             availableStartTime: true,
+    //             availableEndTime: true,
+    //         }
+    //     });
+    
+    //     if (!doctor) {
+    //         throw new BadRequestException('Doctor not found');
+    //     }
+    
+    //     const timeSlots = this.get15MinuteIntervals(doctor.availableStartTime, doctor.availableEndTime);
 
+    //     // console.log("TimeSlots: ", timeSlots)
+    
+    //     // Batch fetch all appointments for the day
+    //     const startOfDay = new Date(date);
+    //     startOfDay.setHours(0, 0, 0, 0);
+    //     const endOfDay = new Date(date);
+    //     endOfDay.setHours(23, 59, 59, 999);
+    
+    //     const appointments = await this.prismaService.appointment.findMany({
+    //         where: {
+    //             doctorId,
+    //             date: {
+    //                 gte: startOfDay,
+    //                 lte: endOfDay,
+    //             },
+    //         },
+    //         select: {
+    //             date: true,
+    //         },
+    //     });
+    
+    //     const bookedTimes = new Set(
+    //         appointments.map(appointment => 
+    //             this.formatTime(new Date(appointment.date))
+    //         )
+    //     );
+    
+    //     const availableSlots = timeSlots.map(time => ({
+    //         time,
+    //         isBooked: bookedTimes.has(time),
+    //     }));
+    
+    //     return { availableSlots };
+    // }
+    
     // Helpers
+
+    
+    private get15MinuteIntervals(start: string, end: string): string[] {
+        const startTime = this.parseTime(start);
+        const endTime = this.parseTime(end);
+        const intervals: string[] = [];
+    
+        let current = startTime;
+        while (current <= endTime) {
+            intervals.push(this.formatTime(current));
+            current.setMinutes(current.getMinutes() + 15);
+        }
+        
+        return intervals;
+    }
+    
+    private parseTime(time: string): Date {
+        const [hour, minute] = time.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hour, minute, 0, 0);
+        return date;
+    }
+    
+    private formatTime(date: Date): string {
+        return date.toTimeString().slice(0, 5);
+    }
+
+    private IndianTime(){
+        const indianTime = new Date();
+        indianTime.setUTCHours(indianTime.getUTCHours() + 5); // Add 5 hours for Indian Standard Time
+        indianTime.setUTCMinutes(indianTime.getUTCMinutes() + 30); // Add additional 30 minutes for Indian Standard Time
+    
+        const startOfToday = new Date(indianTime);
+        startOfToday.setUTCHours(0, 0, 0, 0);
+    
+        const endOfToday = new Date(indianTime);
+        endOfToday.setUTCHours(23, 59, 59, 999);
+
+        return {startOfToday, endOfToday};
+    }
+    
 
 }

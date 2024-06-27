@@ -3,11 +3,23 @@ const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
 const { wssAllMessages, wssDedicatedMessages } = require('./websocketServer');
+const cors = require('cors');
 
-const PORT = 8080;
+const PORT = process.env.PORT;
+
 const app = express();
 const server = http.createServer(app);
+
+const corsOptions = {
+    origin: process.env.CORS_ORIGIN,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const PaymentRouter = require('./routes/payment');
 const ElasticSearchRouter = require('./routes/ElasticSearch');
@@ -45,4 +57,4 @@ mongoose.connect(process.env.MONGO_URL)
     })
     .catch((err) => {
         console.error(err);
-    });
+});

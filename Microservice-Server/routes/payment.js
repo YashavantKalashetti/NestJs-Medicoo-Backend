@@ -20,7 +20,7 @@ router.get("/create-checkout-session", async (req, res) => {
               product_data: {
                 name: "Appointment fees",
               },
-              unit_amount: price || 500 * 100,
+              unit_amount: price * 100 || 500 * 100,
             },
             quantity: 1,
           }],

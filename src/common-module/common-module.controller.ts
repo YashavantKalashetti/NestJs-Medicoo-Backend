@@ -6,12 +6,7 @@ import { GetUser, ValidateEnumPipe } from 'src/auth/customDecorator';
 @Controller('search')
 export class CommonModuleController {
 
-    constructor(private commonModuleService: CommonModuleService,){}
-
-    @Post("test")
-    async test1(){
-        await this.commonModuleService.test();
-    }
+    constructor(private commonModuleService: CommonModuleService){}
 
     @Get('/one')
     async test(){
@@ -49,6 +44,11 @@ export class CommonModuleController {
     @Get('doctors/:id')
     async getDoctorById(@Param('id', ParseUUIDPipe) id: string){
         return this.commonModuleService.getDoctorById(id);
+    }
+
+    @Get('doctors/:id/slots')
+    async getDoctorSlots(@Param('id', ParseUUIDPipe) id: string, @Body() body: {date: Date}){
+        return this.commonModuleService.getDoctorAvailableTimeSlots(id, new Date(body.date));
     }
 
     @Get('hospitals/:id')

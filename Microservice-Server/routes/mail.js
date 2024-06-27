@@ -1,14 +1,15 @@
-require('dotenv').config()
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 
-const sendEmail = require('../Service/Nodemailer');
+const sendEmail = require('../Service/NodeMailer.js');
 const { isEmail } = require('validator')
 
 router.post('/sendEmail', async (req, res) => {
     const { email, message, subject } = req.body
 
     // console.log(email, message, subject)
+
 
     try {
 
