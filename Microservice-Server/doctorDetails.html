@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Data</h1>
+    <div id="dedicatedMessages"></div>
+</body>
+
+<script>
+    const userId = 'YOUR_USER_ID'; 
+    const socket = new WebSocket(`ws://localhost:8080/details?userId=${userId}&type=doctor&id=1260d06d-daed-415b-b1d0-01760c96bc0a`);
+
+    socket.onopen = function(event) {
+        console.log('WebSocket connection for doctor details opened:', event);
+    };
+
+    socket.onmessage = function(event) {
+        const { doctor } = JSON.parse(event.data).details;
+            console.log('Message from doctor details:', doctor);
+            const dedicatedMessagesDiv = document.getElementById('dedicatedMessages');
+            dedicatedMessagesDiv.innerText = doctor;
+            console.log('Message from doctor details --- :', JSON.parse(event.data).details);
+    };
+
+    socket.onclose = function(event) {
+        console.log('WebSocket connection for doctor details closed:', event);
+    };
+
+    socket.onerror = function(error) {
+        console.log('WebSocket error for doctor details:', error);
+    };
+
+</script>
+
+</html>
