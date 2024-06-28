@@ -12,17 +12,17 @@
 
 <script>
     const userId = '123'; 
-    const socket = new WebSocket(`ws://localhost:8080/details?userId=${userId}&type=hospital&id=66adfd3e-eba2-4a84-9a09-9b443084d2a5`);
+    const socket = new WebSocket(`ws://localhost:8080/details?userId=${userId}&type=doctor&id=1260d06d-daed-415b-b1d0-01760c96bc0a`);
 
     socket.onopen = function(event) {
         console.log('WebSocket connection for doctor details opened:', event);
     };
 
     socket.onmessage = function(event) {
-        const { availableForConsult } = JSON.parse(event.data).details;
-            console.log('Message from doctor details:', availableForConsult);
+        const { availableSlotsByDate } = JSON.parse(event.data).details;
+            console.log('Message from doctor details:', availableSlotsByDate);
             const dedicatedMessagesDiv = document.getElementById('dedicatedMessages');
-            dedicatedMessagesDiv.innerText = availableForConsult;
+            dedicatedMessagesDiv.innerText = availableSlotsByDate;
             console.log('Message from doctor details --- :', JSON.parse(event.data).details);
     };
 

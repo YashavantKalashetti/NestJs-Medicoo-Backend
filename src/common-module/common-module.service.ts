@@ -350,7 +350,7 @@ export class CommonModuleService {
     
         // Get today and the next 4 days excluding Sundays
         const dates = [];
-        let currentDate = new Date();
+        let currentDate = new Date(date);
         while (dates.length < 5) {
             if (currentDate.getDay() !== 0) { // 0 represents Sunday
                 dates.push(new Date(currentDate));
@@ -458,7 +458,7 @@ export class CommonModuleService {
         const endOfToday = new Date(indianTime);
         endOfToday.setUTCHours(23, 59, 59, 999);
 
-        return {startOfToday, endOfToday};
+        return {startOfToday, endOfToday, indianTime};
     }
     
 

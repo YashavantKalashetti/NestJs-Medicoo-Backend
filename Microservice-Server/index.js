@@ -10,13 +10,15 @@ const PORT = process.env.PORT;
 const app = express();
 const server = http.createServer(app);
 
-const corsOptions = {
-    origin: process.env.CORS_ORIGIN,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    optionsSuccessStatus: 200
-};
+// const corsOptions = {
+//     origin: "*",
+//     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//     allowedHeaders: ['Content-Type', 'Authorization'],
+//     credentials: true,
+//     optionsSuccessStatus: 200
+// };
+
+// app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -28,6 +30,11 @@ const MailRouter = require('./routes/mail');
 const WhatsAppRouter = require('./routes/WhatsAppMessage');
 const MedDataRouter = require('./routes/MedDataUpdate');
 
+
+app.get('/', (req, res) => {
+    res.send('Hello from Microservice Server');
+});
+
 app.use('/api/v1/payment', PaymentRouter);
 app.use('/api/v1/elasticSearch', ElasticSearchRouter);
 app.use('/api/v1/notification', NotificationRouter);
@@ -35,9 +42,10 @@ app.use('/api/v1/mail', MailRouter);
 app.use('/api/v1/whatsapp', WhatsAppRouter);
 app.use('/api/v1/medData', MedDataRouter);
 
+console.log('Server started', new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }).split(',')[0]);
+
 server.on('upgrade', (request, socket, head) => {
     const pathname = request.url.split('?')[0];
-    // console.log(pathname);
     switch (pathname) {
         case '/allMessages':
             wssAllMessages.handleUpgrade(request, socket, head, (ws) => {
