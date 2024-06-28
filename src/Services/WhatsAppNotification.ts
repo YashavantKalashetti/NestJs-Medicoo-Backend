@@ -1,4 +1,7 @@
+import { ConfigService } from "@nestjs/config";
+
 export async function WhatsAppMessage(contacts, message){
+    const configService = new ConfigService();
     try {
 
         if(!contacts || contacts.length === 0){
@@ -12,7 +15,7 @@ export async function WhatsAppMessage(contacts, message){
             return contact;
         });
 
-        const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/whatsapp/send`, {
+        const response = await fetch(`${configService.get('MICROSERVICE_SERVER')}/whatsapp/send`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({

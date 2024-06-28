@@ -308,14 +308,18 @@ export class CommonModuleService {
                     select:{
                         id:true,
                         name:true,
-                        consultingFees:true,
-                        practicingSince:true,
+                        doctor_number:true,
                         specialization:true,
                         rating:true,
+                        avatar:true,
+                        availableForConsult:true,
+                        education:true,
+                        languages:true,
+                        practicingSince:true,
                     }
                 }
             }
-          });
+        });
 
         if (!hospital) {
             throw new BadRequestException('Hospital not found');
@@ -323,7 +327,7 @@ export class CommonModuleService {
 
         delete hospital.password;
 
-        return {hospital};
+        return { hospital };
     }
 
     async getDoctorAvailableTimeSlots(doctorId: string, date: Date) {
@@ -395,62 +399,27 @@ export class CommonModuleService {
         return { availableSlotsByDate };
     }
     
-    
-    
-    // async getDoctorAvailableTimeSlots(doctorId: string, date: Date) {
-    //     const doctor = await this.prismaService.doctor.findUnique({
-    //         where: {
-    //             id: doctorId
-    //         },
-    //         select: {
-    //             id: true,
-    //             availableStartTime: true,
-    //             availableEndTime: true,
-    //         }
-    //     });
-    
-    //     if (!doctor) {
-    //         throw new BadRequestException('Doctor not found');
-    //     }
-    
-    //     const timeSlots = this.get15MinuteIntervals(doctor.availableStartTime, doctor.availableEndTime);
+    async isHospitalAvailableForConsultation(hospitalId: string){
+        const hospital = await this.prismaService.hospital.findUnique({
+            where:{
+                id: hospitalId
+            },
+            select:{
+                availableForConsult:true
+            }
+        });
 
-    //     // console.log("TimeSlots: ", timeSlots)
-    
-    //     // Batch fetch all appointments for the day
-    //     const startOfDay = new Date(date);
-    //     startOfDay.setHours(0, 0, 0, 0);
-    //     const endOfDay = new Date(date);
-    //     endOfDay.setHours(23, 59, 59, 999);
-    
-    //     const appointments = await this.prismaService.appointment.findMany({
-    //         where: {
-    //             doctorId,
-    //             date: {
-    //                 gte: startOfDay,
-    //                 lte: endOfDay,
-    //             },
-    //         },
-    //         select: {
-    //             date: true,
-    //         },
-    //     });
-    
-    //     const bookedTimes = new Set(
-    //         appointments.map(appointment => 
-    //             this.formatTime(new Date(appointment.date))
-    //         )
-    //     );
-    
-    //     const availableSlots = timeSlots.map(time => ({
-    //         time,
-    //         isBooked: bookedTimes.has(time),
-    //     }));
-    
-    //     return { availableSlots };
-    // }
+        if(!hospital){
+            throw new BadRequestException('Hospital not found');
+        }
+
+        return {availableForConsult: hospital.availableForConsult};
+    }
+
+
     
     // Helpers
+
 
     
     private get15MinuteIntervals(start: string, end: string): string[] {

@@ -104,25 +104,25 @@ function addSubscriber(type, userId, ws) {
             doctorSubscribers[userId] = [];
         }
         doctorSubscribers[userId].push(ws);
-        console.log(`User ${userId} subscribed to doctor details`);
+        // console.log(`User ${userId} subscribed to doctor details`);
     } else if (type === 'hospital') {
         if (!hospitalSubscribers[userId]) {
             hospitalSubscribers[userId] = [];
         }
         hospitalSubscribers[userId].push(ws);
-        console.log(`User ${userId} subscribed to hospital details`);
+        // console.log(`User ${userId} subscribed to hospital details`);
     } else if (type === 'allDoctors') {
         if (!allDoctorSubscribers[userId]) {
             allDoctorSubscribers[userId] = [];
         }
         allDoctorSubscribers[userId].push(ws);
-        console.log(`User ${userId} subscribed to all doctors details`);
+        // console.log(`User ${userId} subscribed to all doctors details`);
     } else if (type === 'allHospitals') {
         if (!allHospitalSubscribers[userId]) {
             allHospitalSubscribers[userId] = [];
         }
         allHospitalSubscribers[userId].push(ws);
-        console.log(`User ${userId} subscribed to all hospitals details`);
+        // console.log(`User ${userId} subscribed to all hospitals details`);
     } else {
         console.log(`Unknown subscription type for user ${userId}`);
     }
@@ -222,6 +222,7 @@ wssDetails.on('connection', async (ws, req) => {
     if (type === 'doctor') {
         addSubscriber('doctor', id, ws);
     } else if (type === 'hospital') {
+        console.log('Hospital id:', id);
         addSubscriber('hospital', id, ws);
     } else if (type === 'allDoctors') {
         addSubscriber('allDoctors', id, ws);
@@ -234,7 +235,7 @@ wssDetails.on('connection', async (ws, req) => {
     await sendDefaultValues(ws, type, id);
 
     ws.on('close', () => {
-        console.log(`User ${userId} disconnected from details`);
+        // console.log(`User ${userId} disconnected from details`);
         if (type === 'doctor') {
             delete doctorSubscribers[id];
         } else if (type === 'hospital') {

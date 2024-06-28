@@ -10,6 +10,14 @@
     <div id="allMessages"></div>
 
     <script>
+
+        const response = fetch("http://localhost:3030/api/v1/search/doctors", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        })
+
         const userId = prompt('Enter your User ID:');
         const allMessagesSocket = new WebSocket(`ws://localhost:8080/allMessages?userId=${userId}`);
 

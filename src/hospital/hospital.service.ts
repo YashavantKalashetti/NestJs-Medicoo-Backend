@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppointmentMode, AppointmentStatus, DoctorSpecialization, Hospital } from '@prisma/client';
 import { CreateAppointmentDto, PatientSignupDto } from 'src/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class HospitalService {
-    constructor(private prismaService: PrismaService) {}
+    constructor(private prismaService: PrismaService, private configService: ConfigService) {}
 
     async getMyHospitalDetails(hospitalId: string){
         const hospital = await this.prismaService.hospital.findUnique({
@@ -583,6 +584,10 @@ export class HospitalService {
             }
         });
 
+        // console.log(hospital);
+
+        await this.updateHositalAvailabilityStatusGlobally(hospitalId, hospital);
+
         return {msg: "Hospital Availability Updated"};
     }
 
@@ -600,6 +605,27 @@ export class HospitalService {
         endOfToday.setUTCHours(23, 59, 59, 999);
 
         return {startOfToday, endOfToday};
+    }
+
+    async updateHositalAvailabilityStatusGlobally(hospitalId: string, hospital) {
+
+        try {
+            const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER_URL')}/medData/hospitals/${hospitalId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ availableForConsult: hospital.availableForConsult }),
+            });
+    
+            if(!response.ok){
+                throw new InternalServerErrorException("Hospital Availability Status not updated globally");
+            }
+        } catch (error) {
+            return { msg: "Hospital Availability Status not updated globally" };
+        }
+
+        return {msg: "Hospital Availability Status Updated Globally"};
     }
 
 }

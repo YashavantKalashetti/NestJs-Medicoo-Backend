@@ -390,7 +390,7 @@ export class PatientService {
     
             return {msg: 'Parent Access updated successfully'};
         } catch (error) {
-            console.error(error.message);
+            console.error(error);
             throw new ForbiddenException('Failed to update parent');
         }
     }

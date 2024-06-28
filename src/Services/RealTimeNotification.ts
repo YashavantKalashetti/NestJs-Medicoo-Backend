@@ -1,6 +1,9 @@
+import { ConfigService } from "@nestjs/config";
+
 export async function RealTimeNotification(senderId, receiverId, message){
+    const configService = new ConfigService();
     try {
-        const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER')}/notification/sendEmergencyMessage`, {
+        const response = await fetch(`${configService.get('MICROSERVICE_SERVER')}/notification/sendEmergencyMessage`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -16,7 +19,7 @@ export async function RealTimeNotification(senderId, receiverId, message){
         }
         return false;
     } catch (error) {
-        console.log(error.message)
+        console.log(error)
         return false;
     }
 }

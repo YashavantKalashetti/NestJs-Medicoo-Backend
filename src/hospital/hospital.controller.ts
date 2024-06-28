@@ -111,7 +111,7 @@ export class HospitalController {
     }
 
     @Patch('setAvailability')
-    async setHospitalAvailability(@GetUser('id') hospitalId: string, @Body('availability') availability: boolean){
+    async setHospitalAvailability(@GetUser('id') hospitalId: string, @Query('availability') availability: boolean){
         return this.hospitalService.setHospitalAvailability(hospitalId, availability);
     }
 

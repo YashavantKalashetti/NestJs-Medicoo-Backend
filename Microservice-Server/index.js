@@ -37,7 +37,7 @@ app.use('/api/v1/medData', MedDataRouter);
 
 server.on('upgrade', (request, socket, head) => {
     const pathname = request.url.split('?')[0];
-    console.log(pathname);
+    // console.log(pathname);
     switch (pathname) {
         case '/allMessages':
             wssAllMessages.handleUpgrade(request, socket, head, (ws) => {

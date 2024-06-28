@@ -56,4 +56,9 @@ export class CommonModuleController {
         return this.commonModuleService.getHospitalById(id);
     }
 
+    @Get('hospitals/:id/availability')
+    async isHospitalAvailableForConsultation(@Param('id', ParseUUIDPipe) id: string){
+        return this.commonModuleService.isHospitalAvailableForConsultation(id);
+    }
+
 }

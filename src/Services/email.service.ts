@@ -27,7 +27,7 @@ export async function EmailService(emailInputDto: EmailInputDto){
         return false;
     } catch (error) {
 
-        console.log(error.message);
+        console.log(error);
         return false;
     }
 

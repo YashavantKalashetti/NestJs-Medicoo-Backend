@@ -601,7 +601,8 @@ export class DoctorService {
                 }
 
             } catch (error) {
-                console.log(error.message);
+                console.log(error);
+                throw new InternalServerErrorException("Error in uploading to elastic search");
             }
 
         }));
@@ -649,7 +650,7 @@ export class DoctorService {
             }
             
         } catch (error) {
-            console.error('Error fetching file type:', error.message);
+            console.error('Error fetching file type:', error);
         }
     }
 

@@ -139,8 +139,8 @@ export class AuthService {
                     throw new ForbiddenException("Credentials taken");
                 }
             }
-            console.log(error.message)
-            return  {msg: "Doctor could not be created" , error: error.message}
+            console.log(error)
+            return  {msg: "Doctor could not be created"}
         }
     }   
 
@@ -192,8 +192,8 @@ export class AuthService {
                     throw new ForbiddenException("Credentials taken");
                 }
             }
-            console.log(error.message)
-            throw error;
+            console.log(error)
+            throw new InternalServerErrorException('Hospital could not be created');
         }
     }
 

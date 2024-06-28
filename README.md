@@ -23,6 +23,30 @@ The project is designed to transform how individuals manage their medical inform
 - **Availability Tracking**: Maintains the availability of doctors and hospitals for consultations.
 - **Real-time Doctor Presence**: Hospitals can track which doctors are currently present, which is crucial for managing emergencies effectively.
 
+
+## + Security Considerations
+
+Ensuring the security of your application is crucial. This project implements several security measures to protect against common threats.
+
+### CORS (Cross-Origin Resource Sharing)
+
+CORS controls how resources on your server are shared with external clients, preventing unauthorized access from different origins.
+
+### CSRF (Cross-Site Request Forgery)
+
+CSRF protection ensures that malicious websites cannot perform actions on behalf of authenticated users without their consent.
+
+### Rate Limiting (Throttling)
+
+Rate limiting controls the number of requests a client can make to the server within a specified time frame, helping to prevent abuse and mitigate the risk of denial-of-service attacks.
+
+### Additional Security Measures
+
+- **Input Validation**: Validates all inputs to prevent injection attacks.
+- **HTTPS**: Encrypts data in transit by using HTTPS.
+- **Authentication & Authorization**: Implements robust mechanisms to ensure only authorized users can access certain resources.
+- **Security Headers**: Sets appropriate HTTP security headers to prevent common web vulnerabilities.
+
 ---
 
 ## Detailed Feature Breakdown

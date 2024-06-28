@@ -1,5 +1,4 @@
 require('dotenv').config();
-const fetch = require('node-fetch');
 const { broadcastUpdatedDetails } = require('./websocketServer'); // Ensure correct import
 
 let allHospitals;
@@ -50,12 +49,16 @@ async function fetchAllHospitals() {
 
 async function fetchHospitalById(id) {
     if (hospital[id] === undefined || hospital[id] === null || hospital[id].length === 0) {
-        const response = await fetch(`${process.env.MAIN_SERVER_URL}/search/hospitals/${id}`, { method: "GET" });
-        if (!response.ok) {
-            return {};
+        try {
+            const response = await fetch(`${process.env.MAIN_SERVER_URL}/search/hospitals/${id}/availability`, { method: "GET" });
+            if (!response.ok) {
+                return {};
+            }
+            const data = await response.json();
+            hospital[id] = data;
+        } catch (error) {
+            console.error("Error fetching hospital by id:", error.message);
         }
-        const data = await response.json();
-        hospital[id] = data;
     }
     return hospital[id];
 }

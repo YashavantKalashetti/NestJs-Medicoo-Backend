@@ -23,10 +23,10 @@ router.patch('/doctors/:id', async (req, res) => {
 });
 
 router.patch('/hospitals/:id', async (req, res) => {
-    const { id, hospital } = req.body;
+    const { id, availableForConsult } = req.body;
 
     const details = {
-        hospital
+        availableForConsult
     }
     
     await updateHospitalById(id, details);
