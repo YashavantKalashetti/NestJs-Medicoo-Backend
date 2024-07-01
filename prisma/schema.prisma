@@ -102,6 +102,7 @@ model Hospital {
   email              String             @unique
   password           String
   address            String
+  hospitalDescription        String
   speciality         HospitalSpeciality @default(GENERAL)
   latitude           Float
   longitude          Float
@@ -129,7 +130,7 @@ model Prescription {
   prescriptionType            PrescriptionType             @default(NORMAL)
   status                    PrescriptionStatus         @default(ACTIVE)
   prescriptionAttachementElasticSearch   PrescriptionAttachementElasticSearch[]
-  displayable             Boolean                    @default(false)
+  displayable               Boolean                    @default(false)
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt
 

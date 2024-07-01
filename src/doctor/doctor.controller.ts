@@ -64,8 +64,8 @@ export class DoctorController {
     }
 
     @Get('patient/:id/reports')
-    async getPatientReportsById(@Param('id') patientId: string, @Query('search') search: string) {
-        return this.doctorService.getPatientReportsById(patientId, search);
+    async getPatientReportsById(@GetUser('id') userId ,@Param('id') patientId: string) {
+        return this.doctorService.getPatientReportsById(userId, patientId);
     }
 
     @Get('patient/:id/medications')

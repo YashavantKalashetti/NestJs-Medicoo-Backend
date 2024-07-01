@@ -4,6 +4,7 @@ import { CreatePrescriptionDto } from '../dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class DoctorService {
@@ -194,6 +195,7 @@ export class DoctorService {
                     patientId: true,
                     prescriptionType: true,
                     status: true,
+                    doctorId: true,
                     instructionForOtherDoctor: true,
                     date: true,
                     attachments: true,
@@ -211,6 +213,7 @@ export class DoctorService {
                     patientId: true,
                     prescriptionType: true,
                     status: true,
+                    doctorId: true,
                     instructionForOtherDoctor: true,
                     date: true,
                     attachments: true,
@@ -219,8 +222,31 @@ export class DoctorService {
             });
         }
 
-        const importantPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "IMPORTANT");
-        const normalPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "NORMAL");
+        const importantPrescriptions = prescriptions
+                                        .filter(prescription => prescription.prescriptionType === "IMPORTANT")
+                                        .filter(prescription => prescription.attachments.length > 0)
+                                        .map(prescription => ({
+                                            ...prescription,
+                                            reports: prescription.attachments.map(attachment => ({
+                                            id: uuidv4(),
+                                            date: prescription.date,
+                                            url: attachment,
+                                            type: this.extractReportTypeFromUrl(attachment),
+                                            }))
+                                        }))
+
+        const normalPrescriptions = prescriptions
+                                        .filter(prescription => prescription.prescriptionType === "NORMAL")
+                                        .filter(prescription => prescription.attachments.length > 0)
+                                        .map(prescription => ({
+                                            ...prescription,
+                                            reports: prescription.attachments.map(attachment => ({
+                                            id: uuidv4(),
+                                            date: prescription.date,
+                                            url: attachment,
+                                            type: this.extractReportTypeFromUrl(attachment),
+                                            }))
+                                        }))
 
         return {importantPrescriptions, normalPrescriptions};
     }
@@ -300,9 +326,9 @@ export class DoctorService {
             }
         });
 
-        if (attachments && attachments.length > 0) {
-            await this.handelElasticSearchEntries(attachments, patientId, prescription.id);
-        }        
+        // if (attachments && attachments.length > 0) {
+        //     await this.handelElasticSearchEntries(attachments, patientId, prescription.id);
+        // }        
             
         if(!prescription){
             throw new InternalServerErrorException("Prescription could not be created");
@@ -344,53 +370,68 @@ export class DoctorService {
         return prescription;
     }
 
-    async getPatientReportsById(patientId: string, search: string="") {
-        search = search?.trim();
-        if(search == "" || !search){
+    async getPatientReportsById(userId:string, patientId: string) {
 
-            const attachments = await this.prismaService.prescriptionAttachementElasticSearch.findMany({
-                where:{
+        const patient = await this.prismaService.patient.findUnique({
+            where:{
+                id: patientId,
+                primaryDoctors : {
+                    some:{
+                        id: userId
+                    }
+                }
+            },
+        });
+
+        let prescriptions;
+
+        if(!patient){
+            console.log("Not Primary Doctor");
+            prescriptions = await this.prismaService.prescription.findMany({    
+                where: {
                     patientId,
+                    status: PrescriptionStatus.ACTIVE,
+                    displayable: true,
+                },
+                select:{
+                    id: true,
+                    attachments: true,
+                    date: true
                 }
             });
-
-            const urls = attachments.map(attachment => attachment.url);
-
-            return urls;
-
-        }
-
-        const response = await fetch(`${this.config.get('MICROSERVICE_SERVER')}/elasticSearch/med-reports`, {
-            method: 'GET',
-            body: JSON.stringify({
-                patientId,
-                searchText: search
-            }),
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if(!response.ok){
-            new InternalServerErrorException("Error in fetching data from elastic search");
-        }
-
-        const { files } = await response.json();
-
-        // console.log(files);
-
-        const documents = files?.map(file => file.documentId);
-
-        const attachments = await this.prismaService.prescriptionAttachementElasticSearch.findMany({
-            where:{
-                id: {
-                    in: documents
+        }else{
+            console.log("Primary Doctor");
+            prescriptions = await this.prismaService.prescription.findMany({
+                where: {
+                    patientId,
+                    status: PrescriptionStatus.ACTIVE,
                 },
-            }
-        });
-        
-        const urls = attachments.map(attachment => attachment.url);
+                select:{
+                    id: true,
+                    attachments: true,
+                    date: true
+                }
+            });
+        }
 
-        return urls;
-        
+        // console.log(prescriptions);
+
+        const reports = prescriptions
+            .filter(prescription => prescription.attachments.length > 0)
+            .flatMap(prescription => 
+            prescription.attachments.map(attachment => ({
+                id: prescription.id + Math.random(),
+                date: prescription.date,
+                url: attachment,
+                type: this.extractReportTypeFromUrl(attachment),
+                prescriptionId: prescription.id
+            }))
+        );
+
+        return {reports};
+
+
+
     }
     
     async deletePrescriptionRequest(userId: string, prescriptionId: string) {
@@ -667,5 +708,15 @@ export class DoctorService {
 
         return {startOfToday, endOfToday};
     }
+
+    private extractReportTypeFromUrl(url: string): string {
+        // Extract the last part of the URL path
+        const fileName = url.split('/').pop();
+        
+        // Remove the file extension to get 'MRI'
+        const mriName = fileName.split('.')[0];
+      
+        return mriName;
+      }
     
 }

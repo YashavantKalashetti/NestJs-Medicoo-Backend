@@ -100,7 +100,6 @@ export class HospitalService {
     }
 
     async getEmergencyAppointments(hospitalId: string) {
-        const {startOfToday, endOfToday} = this.IndianTime();
     
         return this.prismaService.appointment.findMany({
             where: {
@@ -129,8 +128,10 @@ export class HospitalService {
                     }
                 }
             }
+            
         });
     }
+    
 
     // Doctor Services
 

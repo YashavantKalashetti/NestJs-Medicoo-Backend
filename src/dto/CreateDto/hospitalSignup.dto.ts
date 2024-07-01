@@ -13,7 +13,7 @@ export class HospitalSignupDto{
 
     @IsString()         
     @IsNotEmpty()
-    @MinLength(8, { message: "Password must be atleast 8 characters long" })
+    @MinLength(8, { message: "Password must be atleast 8 characters long"})
     password: string;
 
     @IsString()         
@@ -24,6 +24,14 @@ export class HospitalSignupDto{
     @IsNotEmpty()
     address: string;
 
+    @IsString()
+    @IsOptional()
+    speciality: HospitalSpeciality;
+
+    @IsString()
+    @IsOptional()
+    hospitalDescription: string;
+
     @IsNumber()
     @IsNotEmpty()
     latitude: Decimal;
@@ -32,7 +40,4 @@ export class HospitalSignupDto{
     @IsNotEmpty()
     longitude: Decimal;
 
-    @IsString()
-    @IsOptional()
-    speciality: HospitalSpeciality;
 }

@@ -28,6 +28,11 @@ export class HospitalController {
         return this.hospitalService.bookAppointment(hospitalId, appointmentDto);
     }
 
+    @Get('emergency-appointments')
+    async getEmergencyAppointments(@GetUser('id') hospitalId: string){
+        return this.hospitalService.getEmergencyAppointments(hospitalId);
+    }
+
     // Doctor routes
     
     @Get('doctors')

@@ -2,6 +2,7 @@ import { Global, Injectable } from '@nestjs/common';
 import * as cloudinary from 'cloudinary';
 import * as fs from 'fs';
 import { ConfigService } from '@nestjs/config';
+import * as path from 'path';
 
 @Global()
 @Injectable()
@@ -17,8 +18,12 @@ export class CloudinaryService {
     });
 
     return new Promise((resolve, reject) => {
+
+      const fullPathArray = filePath.split('\\');
+      const fileWithNumbers = fullPathArray.pop();
+      const fileName = fileWithNumbers.split('#_#').pop().split('.')[0];
       
-      const uploadStream = cloudinary.v2.uploader.upload_stream({}, (error, result) => {
+      const uploadStream = cloudinary.v2.uploader.upload_stream({ public_id: fileName }, (error, result) => {
         if (error) {
           reject(error);
         } else {
@@ -32,19 +37,12 @@ export class CloudinaryService {
       readStream.on('end', () => {
         fs.unlink(filePath, (err) => {
           if (err) {
-            try {
-              fs.unlinkSync(filePath);
-            } catch (error) {
-              console.error('Error deleting file:', error);
-              return;
-            }
+            console.error('Error deleting file:', err);
           } else {
             console.log('File deleted successfully');
           }
         });
       });
-      
     });
-
   }
 }

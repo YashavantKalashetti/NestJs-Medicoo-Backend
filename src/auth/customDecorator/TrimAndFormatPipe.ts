@@ -9,15 +9,8 @@ export class TrimAndFormatPipe implements PipeTransform {
       return Number(value.toString().trim());
     } else if (Array.isArray(value)) {
       return value.map((item) => this.transform(item));
-    } else if (typeof value === 'object' && value !== null) {
-      const trimmedObject = {};
-      for (const key in value) {
-        if (value.hasOwnProperty(key)) {
-          trimmedObject[key] = this.transform(value[key]);
-        }
-      }
-      return trimmedObject;
     }
+    
     return value;
   }
 }

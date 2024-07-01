@@ -17,4 +17,8 @@ export class CreateMedicationDto{
     @IsNumber()
     @IsOptional()
     numberOfDays: number;
+
+    @IsNumber()
+    @IsOptional()
+    numberOfTimes: number;
 }

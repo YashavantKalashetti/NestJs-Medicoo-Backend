@@ -20,17 +20,17 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1')
   const configService: ConfigService = app.get(ConfigService);
   app.use(cors({
-    origin: configService.get('PRODUCTION') === false ?  ['*']: [configService.get('CLIENT_URL'), configService.get('MICROSERVICE_SERVER_URL')],
+    origin: configService.get('PRODUCTION') === false ?  ['*', 'http://localhost:5173/']: [configService.get('CLIENT_URL'), configService.get('MICROSERVICE_SERVER_URL')],
     credentials: true
   }));
   // app.useGlobalFilters(new AllExceptionsFilter());
   app.use(compression());
-  app.use(csurf({cookie: true}));
-  app.use((req, res, next) => {
-    const cstoken = CryptoJS.AES.encrypt(req.csrfToken(), configService.get('ENCRYPT_KEY')).toString();
-    res.cookie('X-CSRF-Token', cstoken, {httpOnly: true, secure: true, sameSite: 'strict'});
-    next();
-  });
+  // app.use(csurf({cookie: true}));
+  // app.use((req, res, next) => {
+  //   const cstoken = CryptoJS.AES.encrypt(req.csrfToken(), configService.get('ENCRYPT_KEY')).toString();
+  //   res.cookie('X-CSRF-Token', cstoken, {httpOnly: true, secure: true, sameSite: 'strict'});
+  //   next();
+  // });
 
   await app.listen(configService.get('PORT') || 3030);
 }
