@@ -45,6 +45,7 @@ export class CommonModuleService {
             throw new BadRequestException('Please provide latitude and longitude');
         }
 
+
         const haversineDistance = (lat1, lon1, lat2, lon2) => {
             const toRadians = (angle) => angle * (Math.PI / 180);
             const R = 6371; // Radius of the Earth in kilometers
@@ -78,6 +79,7 @@ export class CommonModuleService {
                 availableForConsult: true,
             }
         });
+
         
         const nearestHospitals = hospitals.map((hospital) => {
             const distance = haversineDistance(
@@ -93,8 +95,9 @@ export class CommonModuleService {
         });
         
         nearestHospitals.sort((a, b) => a.distance - b.distance);
+
         
-        return { nearestHospitals };
+        return { hospitals : nearestHospitals };
           
     }
 
@@ -162,15 +165,23 @@ export class CommonModuleService {
             }
         }
 
-        const hospitalNotificationStatus = await RealTimeNotification(patientId, hospital.id, hospitalEmergencyMessage);
-        contacts.push(hospital.contactNumber);
-        await WhatsAppMessage(contacts, hospitalEmergencyMessage);
-
-        if(!hospitalNotificationStatus){
-            return {msg :"Hospital is currently offline. But the request is still notified Please try again later"};
+        try {
+            const hospitalNotificationStatus = await RealTimeNotification(patientId, hospital.id, hospitalEmergencyMessage);
+            contacts.push(hospital.contactNumber);
+            try { 
+                WhatsAppMessage(contacts, hospitalEmergencyMessage);
+            } catch (error) {
+            }
+    
+            if(!hospitalNotificationStatus){
+                return {msg :"Hospital is currently offline. But the request is still notified Please try again later"};
+            }
+        } catch (error) {
+            // console.log(error)
+            return {msg : "Hospital is currently offline. But the request is still notified Please try again later"};
         }
 
-        return { msg: "Emergency Consultation Request Sent" }
+        return { msg: "Emergency Consultation Request Sent." }
 
     }
 
@@ -415,12 +426,7 @@ export class CommonModuleService {
 
         return {availableForConsult: hospital.availableForConsult};
     }
-
-
-    
     // Helpers
-
-
     
     private get15MinuteIntervals(start: string, end: string): string[] {
         const startTime = this.parseTime(start);

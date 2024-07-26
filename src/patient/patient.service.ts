@@ -214,6 +214,8 @@ export class PatientService {
         // check if the given time is in doctor available time
         const isTimeSlotValid = await this.isDoctorAvailableDuringGivenTimeSlot(doctor, appointmentTime);
 
+        // console.log(isTimeSlotValid);
+
         if (!isTimeSlotValid) {
             throw new BadRequestException('Doctor is not available during the given time slot');
         }
@@ -224,7 +226,7 @@ export class PatientService {
     
         const isSlotBooked = await this.isSlotBooked(appointmentDto.doctorId, appointmentTime);
     
-        if (isSlotBooked.avilability) {
+        if (!isSlotBooked.avilability) {
             throw new BadRequestException('Slot is already booked');
         }
     
@@ -246,7 +248,7 @@ export class PatientService {
         const currentTime = new Date();
         
         if(currentTime > appointmentTime){
-            throw new BadRequestException("You cannot book previous day appointments")
+            throw new BadRequestException("You cannot book previous timing appointments")
         }
     
         const appointment = await this.prismaService.appointment.findFirst({
@@ -256,7 +258,7 @@ export class PatientService {
           },
         });
 
-        return {avilability : appointment !== null};
+        return {avilability : appointment === null};
         
     }
 
@@ -578,7 +580,7 @@ export class PatientService {
 
     private isDoctorAvailableDuringGivenTimeSlot(doctor, requestedStartTime: Date): boolean{
 
-        const doctorStartDateTime = new Date();
+        const doctorStartDateTime = new Date(new Date())
         doctorStartDateTime.setHours(parseInt(doctor.availableStartTime.split(':')[0]), parseInt(doctor.availableStartTime.split(':')[1]), 0, 0);
 
         const doctorEndDateTime = new Date();
@@ -589,7 +591,8 @@ export class PatientService {
         // console.log(doctorEndDateTime)
         // console.log(requestedStartTime)
 
-        return requestedStartTime >= doctorStartDateTime && requestedStartTime <= doctorEndDateTime;
+
+        return requestedStartTime >= doctorStartDateTime;
 
     }
 

@@ -13,7 +13,7 @@
 
     <script>
         const userId = prompt('Enter your User ID:');
-        const dedicatedMessagesSocket = new WebSocket(`ws://localhost:8080/details?userId=${userId}`);
+        const dedicatedMessagesSocket = new WebSocket(`ws://localhost:8080/dedicatedMessages?userId=${userId}`);
 
         dedicatedMessagesSocket.onopen = () => {
             console.log('Connected to the Dedicated Messages WebSocket server');

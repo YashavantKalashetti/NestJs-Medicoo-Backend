@@ -25,10 +25,10 @@ export async function WhatsAppMessage(contacts, message){
         })
 
         if(!response.ok){
-            console.log("Could not send whats app message");
+            // console.log("Could not send whats app message");
         }
 
     } catch (error) {
-        console.log("Error Could not send whats app message");
+        // console.log("Error Could not send whats app message");
     }
 }

@@ -1,9 +1,9 @@
 const { Router } = require('express');
 const router = Router();
-
 const wbm = require('wbm');
 const fs = require('fs');
-const sessionFilePath = './session.json';
+const path = require('path');
+const sessionFilePath = path.resolve(__dirname, './session.json');
 
 router.post('/send', async (req, res) => {
     const { message, contacts } = req.body;
@@ -13,29 +13,29 @@ router.post('/send', async (req, res) => {
     }
 
     try {
-        console.log("Starting WBM...");
 
-        await wbm.start({ showBrowser: true });
-        console.log("New session started and saved.");
+        if (fs.existsSync(sessionFilePath)) {
+            await wbm.start({ session: sessionFilePath, showBrowser: true });
+        } else {
+            await wbm.start({ showBrowser: true });
+        }
 
-        const phones = [];
-        
-        contacts.forEach((element) => {
-            phones.push(element);
-        });
+        const phones = ['+91 8073889510']
 
-        await wbm.send(phones, message);
-
-        console.log("Message sent successfully!");
-
+        try {
+            await wbm.send(phones, message);
+            res.json({ message: 'WhatsApp message sent' });
+        } catch (sendError) {
+            res.status(500).json({ message: 'Error sending message' });
+        }
     } catch (err) {
-        console.error("Error sending message:", err);
+        res.status(500).json({ message: 'Error initializing WBM' });
     } finally {
-        await wbm.end();
-        console.log("WBM ended.");
+        try {
+            await wbm.end();
+        } catch (endError) {
+        }
     }
-
-    res.json({ message: 'WhatsApp message sent' });
 });
 
 module.exports = router;

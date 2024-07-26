@@ -19,11 +19,11 @@ router.post('/sendNotificationToAll', async (req, res) => {
             }
         });
     
-        broadcastToAll({ from: 'server', data: message });
+        await broadcastToAll({ from: 'server', data: message });
     
-        res.status(200).json({msg :'Message sent to all connected clients'});
+        return res.status(200).json({msg :'Message sent to all connected clients'});
     } catch (error) {
-        res.status(500).json({msg : 'Internal server error'});
+        return res.status(500).json({msg : 'Internal server error'});
     }
 });
 
@@ -66,6 +66,7 @@ router.post('/sendEmergencyNotification', async (req, res) => {
         if(!senderId) {
             senderId = 'EMERGENCY PATIENT';
         }
+        
 
         // Check if the message has already been sent to the receiver
 
@@ -90,11 +91,10 @@ router.post('/sendEmergencyNotification', async (req, res) => {
             data: message
         });
     
-        const messageSent = broadcastToUser(receiverId, { from: `${senderId}`, data: message });
+        const messageSent = await broadcastToUser(receiverId, { from: `${senderId}`, data: message });
         if(messageSent) {
             await dbMessage.updateOne({ status: 'SENT' });
         }else if(!messageSent) {
-            console.log('User is not online Could not alert the user.');
             return res.status(400).json({msg :'User is not online Could not alert the user.'});
         }
     

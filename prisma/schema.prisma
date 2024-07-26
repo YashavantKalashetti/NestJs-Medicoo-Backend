@@ -102,7 +102,7 @@ model Hospital {
   email              String             @unique
   password           String
   address            String
-  hospitalDescription        String
+  description        String     @default("Hospital")
   speciality         HospitalSpeciality @default(GENERAL)
   latitude           Float
   longitude          Float
@@ -170,7 +170,6 @@ model Appointment {
   // @@unique([patientId, doctorId], name: "appointent_unique_constraint")
   @@map("appointments")
 }
-
 model Platform {
   id                 String @id @default(uuid())
   totalPrescriptions Int    @default(0)
@@ -191,7 +190,6 @@ model PrescriptionAttachementElasticSearch {
 
   @@map("prescription_attachments")
 }
-
 
 // Enums used in the schema
 

@@ -18,7 +18,7 @@ const allDoctorSubscribers = {};
 const allHospitalSubscribers = {};
 
 async function sendQueuedMessagesToUser(userId) {
-    console.log('Sending queued messages to user', userId);
+    // console.log('Sending queued messages to user', userId);
 
     const messages = await Message.find({ receiverId: userId, status: 'PENDING' });
 
@@ -178,7 +178,7 @@ wssAllMessages.on('connection', (ws, req) => {
     const userId = url.parse(req.url, true).query.userId;
 
     allUsers[userId] = ws;
-    console.log(`User ${userId} connected to all messages`);
+    // console.log(`User ${userId} connected to all messages`);
 
     sendQueuedMessagesToAll();
 
@@ -187,7 +187,7 @@ wssAllMessages.on('connection', (ws, req) => {
     });
 
     ws.on('close', () => {
-        console.log(`User ${userId} disconnected from all messages`);
+        // console.log(`User ${userId} disconnected from all messages`);
         delete allUsers[userId];
     });
 });
@@ -197,7 +197,7 @@ wssDedicatedMessages.on('connection', (ws, req) => {
     const userId = parameters.query.userId;
 
     dedicatedUsers[userId] = ws;
-    console.log(`User ${userId} connected`);
+    // console.log(`User ${userId} connected`);
 
     sendQueuedMessagesToUser(userId);
 
@@ -210,7 +210,7 @@ wssDedicatedMessages.on('connection', (ws, req) => {
     });
 
     ws.on('close', () => {
-        console.log(`User ${userId} disconnected`);
+        // console.log(`User ${userId} disconnected`);
         delete dedicatedUsers[userId];
     });
 });

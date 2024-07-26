@@ -546,22 +546,27 @@ export class HospitalService {
             }
         });
 
+
         if(!patient){
             throw new NotFoundException("Patient not found");
         }
 
+    
+
         const appointment = await this.prismaService.appointment.findFirst({
             where:{
-                id: patient.id,
+                patientId: patient.id,
                 hospitalId: null,
                 doctorId: null,
                 status: "EMERGENCY"
             }
         });
 
+
         if(!appointment || appointment.doctorId || appointment.hospitalId){
             throw new NotFoundException("Appointment has been already Undertaken");
         }
+
 
         await this.prismaService.appointment.update({
             where:{
