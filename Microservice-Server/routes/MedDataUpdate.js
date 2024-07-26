@@ -7,11 +7,12 @@ const { broadcastToUser, broadcastUpdatedDetails } = require('../websocketServer
 
 
 router.patch('/doctors/:id', async (req, res) => {
-    const { id, doctor, availableSlotsByDate } = req.body;
+    const { availableSlotsByDate, availableForConsult } = req.body;
 
+    const { id } = req.params;
     
     const details = {
-        doctor,
+        availableForConsult,
         availableSlotsByDate
     }
     
@@ -23,8 +24,10 @@ router.patch('/doctors/:id', async (req, res) => {
 });
 
 router.patch('/hospitals/:id', async (req, res) => {
-    const { id, availableForConsult } = req.body;
+    const { availableForConsult } = req.body;
 
+    const { id } = req.params;
+    console.log(availableForConsult);
     const details = {
         availableForConsult
     }

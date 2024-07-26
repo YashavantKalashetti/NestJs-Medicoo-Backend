@@ -271,6 +271,14 @@ export class CommonModuleService {
     }
 
     async getDoctorById(id: string){
+        const cacheKey = `doctor:${id}`;
+
+        // Check if data is cached
+        const cachedData = await this.redisProvider.getClient().get(cacheKey);
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+
         const doctor = await this.prismaService.doctor.findUnique({
             where: {
                 id
@@ -306,10 +314,21 @@ export class CommonModuleService {
             throw new BadRequestException('Doctor not found');
         }
 
+        await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify({doctor,availableSlotsByDate}));
+
         return {doctor, availableSlotsByDate};
     }
 
     async getHospitalById(id: string){
+
+        const cacheKey = `hospital:${id}`;
+
+        // Check if data is cached
+        const cachedData = await this.redisProvider.getClient().get(cacheKey);
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+
         const hospital = await this.prismaService.hospital.findUnique({
             where:{
                 id
@@ -338,10 +357,16 @@ export class CommonModuleService {
 
         delete hospital.password;
 
+        await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify({hospital}));
+
         return { hospital };
     }
 
-    async getDoctorAvailableTimeSlots(doctorId: string, date: Date) {
+    async getDoctorAvailableTimeSlots(doctorId: string, date?: Date) {
+        if(!date){
+            const { startOfToday } = this.IndianTime()
+            date = new Date(startOfToday);
+        }
         const doctor = await this.prismaService.doctor.findUnique({
             where: {
                 id: doctorId
@@ -350,6 +375,7 @@ export class CommonModuleService {
                 id: true,
                 availableStartTime: true,
                 availableEndTime: true,
+                availableForConsult: true,
             }
         });
     
@@ -407,7 +433,20 @@ export class CommonModuleService {
             });
         }
     
-        return { availableSlotsByDate };
+        return { availableSlotsByDate, availableForConsult: doctor.availableForConsult };
+    }
+
+    async isDoctorAvailableForConsultation(doctorId: string){
+        const doctor = await this.prismaService.doctor.findUnique({
+            where:{
+                id: doctorId
+            },
+        });
+
+        if(!doctor){
+            throw new BadRequestException('Doctor not found');
+        }
+        return {availableForConsult: doctor.availableForConsult};
     }
     
     async isHospitalAvailableForConsultation(hospitalId: string){
@@ -415,17 +454,14 @@ export class CommonModuleService {
             where:{
                 id: hospitalId
             },
-            select:{
-                availableForConsult:true
-            }
         });
-
+        // console.log(hospital)
         if(!hospital){
             throw new BadRequestException('Hospital not found');
         }
-
         return {availableForConsult: hospital.availableForConsult};
     }
+
     // Helpers
     
     private get15MinuteIntervals(start: string, end: string): string[] {

@@ -21,8 +21,9 @@ async function fetchAllDoctors() {
 
 async function fetchDoctorById(id) {
     if (doctor[id] === undefined || doctor[id] === null || doctor[id].length === 0) {
+        console.log(`fetching doctor ${id} data`);
         try {
-            const response = await fetch(`${process.env.MAIN_SERVER_URL}/search/doctors/${id}`, { method: "GET" });
+            const response = await fetch(`${process.env.MAIN_SERVER_URL}/search/doctor/${id}/appointments`, { method: "GET" });
             if (!response.ok) {
                 return {};
             }

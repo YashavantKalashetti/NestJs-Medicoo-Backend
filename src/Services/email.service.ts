@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { EmailInputDto } from "src/dto/CreateDto/emailInput.dto";
 
 import { ConfigService } from '@nestjs/config';
+import { send } from "process";
 
 export async function EmailService(emailInputDto: EmailInputDto){
 
@@ -23,10 +24,8 @@ export async function EmailService(emailInputDto: EmailInputDto){
         if(response.ok){
             return true;
         }
-
         return false;
     } catch (error) {
-
         console.log(error);
         return false;
     }

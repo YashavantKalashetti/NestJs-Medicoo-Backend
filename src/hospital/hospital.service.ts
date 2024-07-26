@@ -2,7 +2,9 @@ import { BadRequestException, Injectable, InternalServerErrorException, NotFound
 import { ConfigService } from '@nestjs/config';
 import { AppointmentMode, AppointmentStatus, DoctorSpecialization, Hospital } from '@prisma/client';
 import { CreateAppointmentDto, PatientSignupDto } from 'src/dto';
+import { EmailInputDto } from 'src/dto/CreateDto/emailInput.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { EmailService } from 'src/Services';
 
 @Injectable()
 export class HospitalService {
@@ -539,19 +541,17 @@ export class HospitalService {
         return { doctors };
     }
 
-    async undertakePatientEmergencyAppointment(hospitalId: string, patient_number: string) {
+    async undertakePatientEmergencyAppointment(hospital: Hospital, patient_number: string) {
         const patient = await this.prismaService.patient.findUnique({
             where:{
                 patient_number
             }
         });
 
-
         if(!patient){
             throw new NotFoundException("Patient not found");
         }
 
-    
 
         const appointment = await this.prismaService.appointment.findFirst({
             where:{
@@ -568,14 +568,54 @@ export class HospitalService {
         }
 
 
-        await this.prismaService.appointment.update({
+        // await this.prismaService.appointment.update({
+        //     where:{
+        //         id: appointment.id
+        //     },
+        //     data:{
+        //         hospitalId : hospital.id
+        //     }
+        // });
+
+        const patientParent = await this.prismaService.patient.findFirst({
             where:{
-                id: appointment.id
-            },
-            data:{
-                hospitalId
+                id: patient.parentId
             }
-        });
+        })
+
+        if (patientParent) {
+            const emailInput = new EmailInputDto();
+            emailInput.email = patientParent.email; 
+            emailInput.subject = '🚨Urgent: Immediate Attention Required for Your Family Member'; 
+            emailInput.message = `Dear ${patientParent.name},
+
+We hope this message finds you well. We are reaching out to inform you of an emergency involving ${patient.name}. The patient has been admitted to ${hospital.name}, and necessary medical actions are being taken. Your immediate attention is kindly requested.
+
+Hospital Details:
+- 🏨Hospital: ${hospital.name}
+- 📍Location: ${hospital.address}
+- 📞Contact: ${hospital.contactNumber}
+
+What You Can Do:
+To help you reach the hospital quickly, we have included a "Locate on Map" button below. This will open a map with the hospital's location, allowing you to plan your route efficiently.
+
+[Locate on Map](https://www.google.com/maps/dir/?api=1&destination=${hospital.latitude},${hospital.longitude})
+
+If you need any further assistance or information, please do not hesitate to contact us. We are here to support you during this critical time.
+
+Thank you for your prompt attention to this matter. The safety and well-being of your loved ones are our top priority.
+
+Best regards,
+
+Binary Fetch
++91 7893798171
+Medico
+        `;
+
+            EmailService(emailInput);
+        }
+        
+
 
         return {msg: "Appointment Undertaken Successfully"};
     }
@@ -592,7 +632,7 @@ export class HospitalService {
 
         // console.log(hospital);
 
-        await this.updateHositalAvailabilityStatusGlobally(hospitalId, hospital);
+        await this.updateHositalAvailabilityStatusGlobally(hospitalId, available);
 
         return {msg: "Hospital Availability Updated"};
     }
@@ -613,7 +653,7 @@ export class HospitalService {
         return {startOfToday, endOfToday};
     }
 
-    async updateHositalAvailabilityStatusGlobally(hospitalId: string, hospital) {
+    async updateHositalAvailabilityStatusGlobally(hospitalId: string, availableForConsult) {
 
         try {
             const response = await fetch(`${this.configService.get('MICROSERVICE_SERVER_URL')}/medData/hospitals/${hospitalId}`, {
@@ -621,13 +661,15 @@ export class HospitalService {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ availableForConsult: hospital.availableForConsult }),
+                body: JSON.stringify({ availableForConsult}),
             });
     
             if(!response.ok){
+                console.log(response);
                 throw new InternalServerErrorException("Hospital Availability Status not updated globally");
             }
         } catch (error) {
+            console.log(error);
             return { msg: "Hospital Availability Status not updated globally" };
         }
 

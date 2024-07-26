@@ -8,7 +8,7 @@ const { isEmail } = require('validator')
 router.post('/sendEmail', async (req, res) => {
     const { email, message, subject } = req.body
 
-    // console.log(email, message, subject)
+    // console.log(email, message)
 
 
     try {
@@ -40,14 +40,14 @@ router.post('/sendEmail', async (req, res) => {
             });
 
         if(emailError){
-            // console.log(error)
+            console.log(error)
             return res.status(400).json({error:"Invalid Request"})
         }
 
         return res.status(200).json({message:"Email Sent"})
 
     } catch (error) {
-        // console.log(error.message)
+        console.log(error.message)
         return res.status(400).json({error:"Invalid Request"})
     }
 })

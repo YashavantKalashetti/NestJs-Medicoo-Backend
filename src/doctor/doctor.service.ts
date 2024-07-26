@@ -5,10 +5,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { CommonModuleService } from 'src/common-module/common-module.service';
+import { RealTimeUpdateService } from 'src/Helpers/RealTimeUpdate.Service';
 
 @Injectable()
 export class DoctorService {
-    constructor(private prismaService: PrismaService,private config: ConfigService) {}
+    constructor(private prismaService: PrismaService,private config: ConfigService, private commonModuleService: CommonModuleService, private realTimeUpdateService: RealTimeUpdateService) {}
 
     async getMyDetails_Doctor(userId: string) {
 
@@ -538,6 +540,8 @@ export class DoctorService {
         if(!doctor){
             throw new InternalServerErrorException("Doctor availability could not be updated");
         }
+
+        this.realTimeUpdateService.setDoctorDetailsGlobally(doctor);
 
         return { msg: "Doctor availability updated successfully" };
     }

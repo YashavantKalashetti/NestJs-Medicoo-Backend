@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 const url = require('url');
 const Message = require('./models/Message');
-const { fetchAllDoctors, fetchAllHospitals, fetchDoctorById, fetchHospitalById } = require('./websocketHelper');
+const { fetchDoctorById, fetchHospitalById } = require('./websocketHelper');
 
 const wssAllMessages = new WebSocket.Server({ noServer: true });
 const wssDedicatedMessages = new WebSocket.Server({ noServer: true });
@@ -14,12 +14,8 @@ const messageQueueToUser = {};
 
 const doctorSubscribers = {};
 const hospitalSubscribers = {};
-const allDoctorSubscribers = {};
-const allHospitalSubscribers = {};
 
 async function sendQueuedMessagesToUser(userId) {
-    // console.log('Sending queued messages to user', userId);
-
     const messages = await Message.find({ receiverId: userId, status: 'PENDING' });
 
     messages.forEach(async (message) => {
@@ -67,64 +63,38 @@ function broadcastToAll(message) {
 async function broadcastUpdatedDetails(type, details, id) {
     let subscribers;
     if (type === 'doctor') {
-        subscribers = id ? { [id]: doctorSubscribers[id] } : doctorSubscribers;
+        subscribers = doctorSubscribers[id];
     } else if (type === 'hospital') {
-        subscribers = id ? { [id]: hospitalSubscribers[id] } : hospitalSubscribers;
-    } else if (type === 'allDoctors') {
-        subscribers = allDoctorSubscribers;
-    } else if (type === 'allHospitals') {
-        subscribers = allHospitalSubscribers;
+        subscribers = hospitalSubscribers[id];
     } else {
         return;
     }
-
     if (!subscribers) {
         return;
     }
 
-    Object.keys(subscribers).forEach(userId => {
-        const userSubscribers = subscribers[userId];
-        if (Array.isArray(userSubscribers)) {
-            userSubscribers.forEach(ws => {
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type, id, details }));
-                }
-            });
-        } else {
-            if (userSubscribers && userSubscribers.readyState === WebSocket.OPEN) {
-                userSubscribers.send(JSON.stringify({ type, id, details }));
-            }
+    subscribers.forEach(ws => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type, id, details }));
         }
     });
 }
 
-function addSubscriber(type, userId, ws) {
+function addSubscriber(type, userId, ws, id) {
     if (type === 'doctor') {
-        if (!doctorSubscribers[userId]) {
-            doctorSubscribers[userId] = [];
+        if (!doctorSubscribers[id]) {
+            doctorSubscribers[id] = [];
         }
-        doctorSubscribers[userId].push(ws);
-        // console.log(`User ${userId} subscribed to doctor details`);
+        doctorSubscribers[id].push(ws);
+        // console.log(`User ${userId} subscribed to doctor ${id} details`);
     } else if (type === 'hospital') {
-        if (!hospitalSubscribers[userId]) {
-            hospitalSubscribers[userId] = [];
+        if (!hospitalSubscribers[id]) {
+            hospitalSubscribers[id] = [];
         }
-        hospitalSubscribers[userId].push(ws);
-        // console.log(`User ${userId} subscribed to hospital details`);
-    } else if (type === 'allDoctors') {
-        if (!allDoctorSubscribers[userId]) {
-            allDoctorSubscribers[userId] = [];
-        }
-        allDoctorSubscribers[userId].push(ws);
-        // console.log(`User ${userId} subscribed to all doctors details`);
-    } else if (type === 'allHospitals') {
-        if (!allHospitalSubscribers[userId]) {
-            allHospitalSubscribers[userId] = [];
-        }
-        allHospitalSubscribers[userId].push(ws);
-        // console.log(`User ${userId} subscribed to all hospitals details`);
+        hospitalSubscribers[id].push(ws);
+        // console.log(`User ${userId} subscribed to hospital ${id} details`);
     } else {
-        console.log(`Unknown subscription type for user ${userId}`);
+        console.log(`Unknown subscription type from user ${userId}`);
     }
 }
 
@@ -163,10 +133,6 @@ async function sendDefaultValues(ws, type, id) {
         defaultDetails = await fetchDoctorById(id);
     } else if (type === 'hospital') {
         defaultDetails = await fetchHospitalById(id);
-    } else if (type === 'allDoctors') {
-        defaultDetails = await fetchAllDoctors();
-    } else if (type === 'allHospitals') {
-        defaultDetails = await fetchAllHospitals();
     } else {
         defaultDetails = {};
     }
@@ -218,32 +184,17 @@ wssDedicatedMessages.on('connection', (ws, req) => {
 wssDetails.on('connection', async (ws, req) => {
     const parameters = url.parse(req.url, true);
     const { userId, type, id } = parameters.query;
+    // console.log(`User ${userId} connected to details, type: ${type}, id: ${id}`);
 
-    if (type === 'doctor') {
-        addSubscriber('doctor', id, ws);
-    } else if (type === 'hospital') {
-        console.log('Hospital id:', id);
-        addSubscriber('hospital', id, ws);
-    } else if (type === 'allDoctors') {
-        addSubscriber('allDoctors', id, ws);
-    } else if (type === 'allHospitals') {
-        addSubscriber('allHospitals', id, ws);
-    } else {
-        console.log(`Unknown subscription type for user ${userId}`);
-    }
-
+    addSubscriber(type, userId, ws, id);
     await sendDefaultValues(ws, type, id);
 
     ws.on('close', () => {
         // console.log(`User ${userId} disconnected from details`);
         if (type === 'doctor') {
-            delete doctorSubscribers[id];
+            doctorSubscribers[id] = doctorSubscribers[id].filter(subscriber => subscriber !== ws);
         } else if (type === 'hospital') {
-            delete hospitalSubscribers[id];
-        } else if (type === 'allDoctors') {
-            delete allDoctorSubscribers[id];
-        } else if (type === 'allHospitals') {
-            delete allHospitalSubscribers[id];
+            hospitalSubscribers[id] = hospitalSubscribers[id].filter(subscriber => subscriber !== ws);
         }
     });
 });

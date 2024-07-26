@@ -111,13 +111,12 @@ export class HospitalController {
     }
 
     @Get('patientEmergencyAppointment/:patient_number')
-    async underTakePatientEmergencyAppointment(@GetUser('id') hospitalId: string, @Param('patient_number') patient_number: string){
-        return this.hospitalService.undertakePatientEmergencyAppointment(hospitalId, patient_number);
+    async underTakePatientEmergencyAppointment(@GetUser() hospital, @Param('patient_number') patient_number: string){
+        return this.hospitalService.undertakePatientEmergencyAppointment(hospital, patient_number);
     }
 
     @Patch('setAvailability')
     async setHospitalAvailability(@GetUser('id') hospitalId: string, @Query('availability') availability: boolean){
         return this.hospitalService.setHospitalAvailability(hospitalId, availability);
     }
-
 }

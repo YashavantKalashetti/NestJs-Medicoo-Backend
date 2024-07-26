@@ -5,11 +5,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { platform } from 'os';
 import { NotFoundError } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
+import { CommonModuleService } from 'src/common-module/common-module.service';
+import { RealTimeUpdateService } from 'src/Helpers/RealTimeUpdate.Service';
 
 @Injectable()
 export class PatientService {
 
-    constructor(private prismaService:PrismaService, private config: ConfigService){}
+    constructor(private prismaService:PrismaService, private config: ConfigService, private commonModuleService: CommonModuleService, private realTimeUpdateService: RealTimeUpdateService){}
 
     async getMyDetails_Patient(userId: string){
         const patient = await this.prismaService.patient.findUnique({
@@ -199,12 +201,6 @@ export class PatientService {
             where: {
                 id: appointmentDto.doctorId
             },
-            select: {
-                id: true,
-                name: true,
-                availableStartTime: true,
-                availableEndTime: true,
-            }
         });
 
         const appointmentTime = new Date(appointmentDto.date);
@@ -239,6 +235,8 @@ export class PatientService {
                 reason: appointmentDto.reason,
             },
         });
+
+        this.realTimeUpdateService.setDoctorDetailsGlobally(doctor);
     
         return { appointment };
     }
@@ -609,5 +607,6 @@ export class PatientService {
 
         return {startOfToday, endOfToday};
     }
+    
     
 }

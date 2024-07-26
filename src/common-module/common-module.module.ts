@@ -8,6 +8,7 @@ import { CpuIntensiveTasksModule } from 'src/cpu-intensive-tasks/cpu-intensive-t
 @Module({
   imports:[CpuIntensiveTasksModule],
   controllers: [CommonModuleController],
-  providers: [CommonModuleService]
+  providers: [CommonModuleService],
+  exports: [CommonModuleService]
 })
 export class CommonModuleModule {}

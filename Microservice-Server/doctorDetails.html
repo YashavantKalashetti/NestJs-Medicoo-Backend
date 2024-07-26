@@ -11,8 +11,9 @@
 </body>
 
 <script>
-    const userId = '123'; 
-    const socket = new WebSocket(`ws://localhost:8080/details?userId=${userId}&type=doctor&id=1260d06d-daed-415b-b1d0-01760c96bc0a`);
+    const userId = prompt('Enter your User ID:');
+    const doctorId = prompt('Enter the Doctor ID:');
+    const socket = new WebSocket(`ws://localhost:8080/details?userId=${1234}&type=doctor&id=${doctorId}`);
 
     socket.onopen = function(event) {
         console.log('WebSocket connection for doctor details opened:', event);
@@ -20,10 +21,10 @@
 
     socket.onmessage = function(event) {
         const { availableSlotsByDate } = JSON.parse(event.data).details;
-            console.log('Message from doctor details:', availableSlotsByDate);
-            const dedicatedMessagesDiv = document.getElementById('dedicatedMessages');
-            dedicatedMessagesDiv.innerText = availableSlotsByDate;
-            console.log('Message from doctor details --- :', JSON.parse(event.data).details);
+        console.log('Message from doctor details:', availableSlotsByDate);
+        const dedicatedMessagesDiv = document.getElementById('dedicatedMessages');
+        dedicatedMessagesDiv.innerText = availableSlotsByDate;
+        console.log('Message from doctor details --->:', JSON.parse(event.data).details);
     };
 
     socket.onclose = function(event) {
