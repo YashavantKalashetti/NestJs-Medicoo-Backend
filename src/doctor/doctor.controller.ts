@@ -31,8 +31,8 @@ export class DoctorController {
     }
 
     @Get('patient/:id')
-    async getPatientById(@Param('id', ParseUUIDPipe) patientId: string) {
-        return this.doctorService.getPatientById(patientId);
+    async getPatientById(@GetUser('id') userId: string, @Param('id', ParseUUIDPipe) patientId: string) {
+        return this.doctorService.getPatientById(userId, patientId);
     }
 
     @Post('patient/:id')

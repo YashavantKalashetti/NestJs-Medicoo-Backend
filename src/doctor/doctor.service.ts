@@ -53,7 +53,7 @@ export class DoctorService {
         return {doctor, onlineAppointments, offlineAppointments, registeredHospitals};
     }
 
-    async getAppointments(userId: string, ) {
+    async getAppointments(userId: string) {
         const {startOfToday, endOfToday} = this.IndianTime();
     
         const appointments = await this.prismaService.appointment.findMany({
@@ -132,7 +132,7 @@ export class DoctorService {
         });
     }
 
-    async getPatientById(patientId: string) {
+    async getPatientById( userId: string,patientId: string) {
 
         const patient = await this.prismaService.patient.findUnique({
             where: {
@@ -142,16 +142,7 @@ export class DoctorService {
                 name: true,
                 contactNumber: true,
                 dob: true,
-                appointments: true,
-                prescriptions: {
-                    where: {
-                        status: PrescriptionStatus.ACTIVE,
-                        displayable: true
-                    },
-                    include: {
-                        medications: true
-                    }
-                },
+                gender: true,
                 medicalDetails: {
                     select: {
                         bloodGroup: true,
@@ -170,7 +161,20 @@ export class DoctorService {
             throw new InternalServerErrorException("Patient not found");
         }
 
-        return {patient};
+        console.log(patient);
+
+        // const { reports } = await this.getPatientReportsById(userId, patientId);
+
+
+        const { importantPrescriptions, normalPrescriptions } = await this.getPatientPrescriptionById(userId, patientId);
+
+        // console.log(reports)
+
+        const prescriptions = [...importantPrescriptions, ...normalPrescriptions];
+
+        let copyPatient = {...patient, prescriptions};
+
+        return {patient: copyPatient};
     }
     
     async getPatientPrescriptionById(userId: string, patientId: string) {
@@ -431,8 +435,6 @@ export class DoctorService {
         );
 
         return {reports};
-
-
 
     }
     

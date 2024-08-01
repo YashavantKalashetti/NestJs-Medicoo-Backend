@@ -73,6 +73,8 @@ async function broadcastUpdatedDetails(type, details, id) {
         return;
     }
 
+
+    // console.log(`Broadcasting updated details for ${type} ${id}`);
     subscribers.forEach(ws => {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type, id, details }));
@@ -137,6 +139,7 @@ async function sendDefaultValues(ws, type, id) {
         defaultDetails = {};
     }
 
+    console.log(`Sending default values for ${type} ${id}`);
     ws.send(JSON.stringify({ type, details: defaultDetails }));
 }
 

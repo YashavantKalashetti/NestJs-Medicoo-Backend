@@ -33,6 +33,12 @@ export class PatientService {
                 date: true,
                 reason: true,
                 mode: true,
+                doctor:{
+                    select:{
+                        name: true,
+                        contactNumber: true,
+                    }
+                },
             },
             orderBy: {
                 date: 'desc'
@@ -70,7 +76,20 @@ export class PatientService {
             }
         });
 
-        const reports = await this.getPatientReports(userId , "");
+        // let allReports = await this.getPatientReports(userId , "");
+
+        const reports = prescriptions
+            .filter(prescription => prescription.attachments.length > 0)
+            .flatMap(prescription => 
+            prescription.attachments.map(attachment => ({
+                id: prescription.id + Math.random(),
+                date: prescription.date,
+                url: attachment,
+                type: this.extractReportTypeFromUrl(attachment),
+                prescriptionId: prescription.id
+            }))
+        );
+
 
         delete patient.password;
 
@@ -84,7 +103,13 @@ export class PatientService {
                 status: PrescriptionStatus.ACTIVE
             },
             include:{
-                medications: true
+                medications: true,
+                doctor: {
+                    select: {
+                        name: true,
+                        specialization: true
+                    }
+                }
             },
             orderBy:{
                 createdAt: 'desc'
@@ -104,7 +129,14 @@ export class PatientService {
                 patientId: userId,
             },
             include:{
-                medications: true
+                medications: true,
+                doctor: {
+                    select: {
+                        name: true,
+                        specialization: true,
+                        contactNumber: true,
+                    }
+                }
             }
         });
 
@@ -112,7 +144,19 @@ export class PatientService {
             throw new BadRequestException("Prescription not found");
         }
 
-        return {prescription};
+        const reports = prescription.attachments.map(attachment => ({
+            id: prescription.id + Math.random(),
+            date: prescription.date,
+            url: attachment,
+            type: this.extractReportTypeFromUrl(attachment),
+            prescriptionId: prescription.id
+        }));
+
+        const copyPrescription = {...prescription, reports};
+
+        // console.log(copyPrescription.reports);
+
+        return {prescription: copyPrescription};
     }
 
     async updatePrescriptionDisplayStatus(userId: string, prescriptionId: string, status: boolean){
@@ -148,54 +192,37 @@ export class PatientService {
     }
 
     async getPatientReports(patientId: string, search: string){
-        search = search?.trim();
-        if(search == "" || search == null){
 
-            const attachments = await this.prismaService.prescriptionAttachementElasticSearch.findMany({
-                where:{
-                    patientId,
-                }
-            });
-
-            const urls = attachments.map(attachment => attachment.url);
-
-            return {urls};
-
-        }
-
-        const response = await fetch(`${this.config.get('MICROSERVICE_SERVER')}/elasticSearch/med-reports`, {
-            method: 'POST',
-            body: JSON.stringify({
+        const prescriptions = await this.prismaService.prescription.findMany({
+            where: {
                 patientId,
-                searchText: search
-            }),
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if(!response.ok){
-            new InternalServerErrorException("Error in fetching data from elastic search");
-        }
-
-        const { files } = await response.json();
-
-        // console.log(files);
-
-        const documents = files?.map(file => file.documentId);
-
-        const attachments = await this.prismaService.prescriptionAttachementElasticSearch.findMany({
-            where:{
-                id: {
-                    in: documents
-                },
+                status: PrescriptionStatus.ACTIVE,
+            },
+            select:{
+                id: true,
+                attachments: true,
+                date: true
             }
         });
-        
-        const urls = attachments.map(attachment => attachment.url);
 
-        return {urls};
+        const reports = prescriptions
+            .filter(prescription => prescription.attachments.length > 0)
+            .flatMap(prescription => 
+            prescription.attachments.map(attachment => ({
+                id: prescription.id + Math.random(),
+                date: prescription.date,
+                url: attachment,
+                type: this.extractReportTypeFromUrl(attachment),
+                prescriptionId: prescription.id
+            }))
+        );
+
+        return {reports};
     }
 
     async bookAppointment(userId: string, appointmentDto: CreateAppointmentDto, status?: AppointmentStatus) {
+
+        // console.log(appointmentDto);
         
         const doctor = await this.prismaService.doctor.findUnique({
             where: {
@@ -206,6 +233,9 @@ export class PatientService {
         const appointmentTime = new Date(appointmentDto.date);
         const [hour, minute] = appointmentDto.slotTime.split(':').map(Number);
         appointmentTime.setHours(hour, minute, 0, 0);
+
+        const istOffset = 5 * 60 + 30;
+        appointmentTime.setMinutes(appointmentTime.getMinutes() + istOffset);
 
         // check if the given time is in doctor available time
         const isTimeSlotValid = await this.isDoctorAvailableDuringGivenTimeSlot(doctor, appointmentTime);
@@ -226,6 +256,7 @@ export class PatientService {
             throw new BadRequestException('Slot is already booked');
         }
     
+        // console.log("Booking Time", appointmentTime);
     
         const appointment = await this.prismaService.appointment.create({
             data: {
@@ -255,6 +286,8 @@ export class PatientService {
             date: new Date(appointmentTime),
           },
         });
+        // console.log(appointmentTime);
+        // console.log(appointment);
 
         return {avilability : appointment === null};
         
@@ -273,6 +306,23 @@ export class PatientService {
             },
             orderBy: {
                 date: 'desc'
+            },
+            include:{
+                doctor: {
+                    select:{
+                        name: true,
+                        specialization: true,
+                        contactNumber: true,
+                        avatar: true
+                    }
+                },
+                hospital: {
+                    select:{
+                        name: true,
+                        contactNumber: true,
+                        address: true
+                    }
+                }
             }
         });
 
@@ -576,23 +626,22 @@ export class PatientService {
         return {validMediations, expiredMedications};
     }
 
-    private isDoctorAvailableDuringGivenTimeSlot(doctor, requestedStartTime: Date): boolean{
+    private isDoctorAvailableDuringGivenTimeSlot(doctor, requestedStartTime: Date): boolean {
+        // Convert doctor's available times to hours and minutes
+        const [startHour, startMinute] = doctor.availableStartTime.split(':').map(Number);
+        const [endHour, endMinute] = doctor.availableEndTime.split(':').map(Number);
 
-        const doctorStartDateTime = new Date(new Date())
-        doctorStartDateTime.setHours(parseInt(doctor.availableStartTime.split(':')[0]), parseInt(doctor.availableStartTime.split(':')[1]), 0, 0);
+        const date = new Date(requestedStartTime);
 
-        const doctorEndDateTime = new Date();
-        doctorEndDateTime.setHours(parseInt(doctor.availableEndTime.split(':')[0]), parseInt(doctor.availableEndTime.split(':')[1]), 0, 0);
+        // console.log('Doctor Available Start Time:', startHour, startMinute);
+        // console.log('Doctor Available End Time:', endHour, endMinute);
+        // console.log('Requested Start Time:', date.getUTCHours(), date.getUTCMinutes());
 
-
-        // console.log(doctorStartDateTime)
-        // console.log(doctorEndDateTime)
-        // console.log(requestedStartTime)
-
-
-        return requestedStartTime >= doctorStartDateTime;
-
+        return startHour <= date.getUTCHours() && date.getUTCHours() <= endHour;
+        
     }
+    
+      
 
     private IndianTime(){
         const indianTime = new Date();
@@ -607,6 +656,16 @@ export class PatientService {
 
         return {startOfToday, endOfToday};
     }
+
+    private extractReportTypeFromUrl(url: string): string {
+        // Extract the last part of the URL path
+        const fileName = url.split('/').pop();
+        
+        // Remove the file extension to get 'MRI'
+        const mriName = fileName.split('.')[0];
+      
+        return mriName;
+      }
     
     
 }

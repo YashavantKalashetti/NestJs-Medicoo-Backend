@@ -39,7 +39,7 @@ export class PatientController {
         return this.patientService.getAllCurrentMedications(userId);
     }
 
-    @Get('medicalReports')
+    @Get('reports')
     async getPatientReports(@GetUser('id') userId: string, @Param('search', ) search: string){
         return this.patientService.getPatientReports(userId, search);
     }

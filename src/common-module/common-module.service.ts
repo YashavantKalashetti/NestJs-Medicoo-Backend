@@ -367,6 +367,7 @@ export class CommonModuleService {
             const { startOfToday } = this.IndianTime()
             date = new Date(startOfToday);
         }
+
         const doctor = await this.prismaService.doctor.findUnique({
             where: {
                 id: doctorId
@@ -388,6 +389,7 @@ export class CommonModuleService {
         // Get today and the next 4 days excluding Sundays
         const dates = [];
         let currentDate = new Date(date);
+
         while (dates.length < 5) {
             if (currentDate.getDay() !== 0) { // 0 represents Sunday
                 dates.push(new Date(currentDate));
@@ -398,11 +400,12 @@ export class CommonModuleService {
         const availableSlotsByDate = [];
     
         for (const date of dates) {
+            // Convert the date to UTC to avoid time zone issues
             const startOfDay = new Date(date);
-            startOfDay.setHours(0, 0, 0, 0);
+            startOfDay.setUTCHours(0, 0, 0, 0);
             const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
-    
+            endOfDay.setUTCHours(23, 59, 59, 999);
+        
             const appointments = await this.prismaService.appointment.findMany({
                 where: {
                     doctorId,
@@ -415,23 +418,31 @@ export class CommonModuleService {
                     date: true,
                 },
             });
-    
+        
+            // Create a set of booked times formatted to match time slots
             const bookedTimes = new Set(
-                appointments.map(appointment =>
-                    this.formatTime(new Date(appointment.date))
-                )
+                appointments.map(appointment => {
+                    const appointmentDate = new Date(appointment.date);
+                    const hours = String(appointmentDate.getUTCHours()).padStart(2, '0');
+                    const minutes = String(appointmentDate.getUTCMinutes()).padStart(2, '0');
+                    return `${hours}:${minutes}`;
+                })
             );
-    
+        
+            // Check each time slot against the booked times
             const availableSlots = timeSlots.map(time => ({
                 time,
                 isBooked: bookedTimes.has(time),
             }));
-    
+        
             availableSlotsByDate.push({
-                date: date.toISOString().split('T')[0], // Format date as YYYY-MM-DD
+                date: date.toISOString().split('T')[0],
                 availableSlots
             });
         }
+        
+        
+        
     
         return { availableSlotsByDate, availableForConsult: doctor.availableForConsult };
     }

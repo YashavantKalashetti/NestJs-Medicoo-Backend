@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma/prisma.service';
 
 import * as argon2 from "argon2";
@@ -23,24 +23,24 @@ export class AuthService {
 
     constructor(private prismaService: PrismaService, private config: ConfigService, private jwt: JwtService){}
 
-    async patientSignin(signinDto: SigninDto):Promise<{access_token: string}>{
+    async patientSignin(signinDto: SigninDto){
         const { email, password} = signinDto;
         const user = await this.prismaService.patient.findUnique({
             where:{ email }
         })
 
         if(!user){
-            throw new ForbiddenException('Incorrect credentials');
+            throw new UnauthorizedException('Incorrect credentials');
         }
 
         if(! argon2.verify(user.password, password)){
-            throw new ForbiddenException('Incorrect credentials');
+            throw new UnauthorizedException('Incorrect credentials');
         }
 
         const { access_token } = await this.signToken(user.id, user.email, ROLES.PATIENT);
 
         // this.setCookie(res, access_token);
-        return {access_token};
+        return {access_token, role: ROLES.PATIENT, userId: user.id};
     }
 
     async patientSignup(patientSignupDto: PatientSignupDto){
@@ -88,24 +88,23 @@ export class AuthService {
         }
     }
 
-    async doctorSignin(signinDto: SigninDto):Promise<{access_token: string}>{
-        console.log("Doctor Signin");
+    async doctorSignin(signinDto: SigninDto){
         const { email, password} = signinDto;
         const user = await this.prismaService.doctor.findUnique({
             where:{ email }
         })
 
         if(!user){
-            throw new ForbiddenException('Incorrect credentials');
+            throw new UnauthorizedException('Incorrect credentials');
         }
 
         if(! argon2.verify(user.password, password)){
-            throw new ForbiddenException('Incorrect credentials');
+            throw new UnauthorizedException('Incorrect credentials');
         }
 
         const {access_token} = await this.signToken(user.id, user.email, ROLES.DOCTOR);
         // this.setCookie(res, access_token);
-        return {access_token};
+        return {access_token, role: ROLES.DOCTOR, userId: user.id};
         
     }
 
@@ -144,25 +143,24 @@ export class AuthService {
         }
     }   
 
-    async hospitalSignin(signinDto: SigninDto):Promise<{access_token: string}>{
+    async hospitalSignin(signinDto: SigninDto){
         const { email, password} = signinDto;
         const user = await this.prismaService.hospital.findUnique({
             where:{ email }
         })
 
         if(!user){
-            throw new ForbiddenException('Incorrect credentials');
+            throw new UnauthorizedException('Incorrect credentials');
         }
 
         if(! argon2.verify(user.password, password)){
-            throw new ForbiddenException('Incorrect credentials');
+            throw new UnauthorizedException('Incorrect credentials');
         }
-
 
         const { access_token } = await this.signToken(user.id, user.email, ROLES.HOSPITAL);
 
         // this.setCookie(res, access_token);
-        return {access_token};
+        return {access_token, role: ROLES.HOSPITAL, userId: user.id};
     }
 
     async hospitalSignup(hospitalSignupDto: HospitalSignupDto){

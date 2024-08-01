@@ -46,10 +46,10 @@ export class CommonModuleController {
         return this.commonModuleService.getDoctorById(id);
     }
 
-    @Get('doctors/:id/slots')
-    async getDoctorSlots(@Param('id', ParseUUIDPipe) id: string, @Body() body: {date: Date}){
-        return this.commonModuleService.getDoctorAvailableTimeSlots(id, new Date(body.date));
-    }
+    // @Get('doctors/:id/slots')
+    // async getDoctorSlots(@Param('id', ParseUUIDPipe) id: string, @Body() body: {date: Date}){
+    //     return this.commonModuleService.getDoctorAvailableTimeSlots(id, new Date(body.date));
+    // }
 
     @Get('hospitals/:id')
     async getHospitalById(@Param('id', ParseUUIDPipe) id: string){

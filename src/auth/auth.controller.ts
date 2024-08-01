@@ -1,4 +1,4 @@
-import { Body, ClassSerializerInterceptor, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthService, ROLES } from './auth.service';
 import { SigninDto, PatientSignupDto, DoctorSignupDto, HospitalSignupDto } from '../dto';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -7,12 +7,30 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from './JwtStrategy';
 import { Roles } from './customDecorator';
 import { EmailInputDto } from 'src/dto/CreateDto/emailInput.dto';
+import { request, Response } from 'express';
 
 @UseInterceptors(ClassSerializerInterceptor)  
 @Controller('auth')
 export class AuthController {
 
     constructor(private authService: AuthService, private cloudinaryService: CloudinaryService){}
+
+    @Get('/')
+    handleRequest(@Req() request: Request, @Res() res: Response, @Query() query: any) {
+      console.log('Request Body:', query);
+  
+      res.cookie('exampleCookie', 'cookieValue', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 3600000,
+      });
+
+      throw new UnauthorizedException('This is a test error');
+
+      return "hello";
+  
+    //   res.status(200).send({ message: 'Cookie has been set' });
+    }
 
     @Roles([ROLES.DOCTOR, ROLES.PATIENT, ROLES.HOSPITAL])
     @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -23,8 +41,10 @@ export class AuthController {
 
     @HttpCode(HttpStatus.OK)
     @Post('patient/signin')
-    async patientSignin(@Body() signinDto: SigninDto):Promise<{access_token: string}>{
-        return this.authService.patientSignin(signinDto);
+    async patientSignin(@Res() res: Response, @Body() signinDto: SigninDto){
+        const {access_token, role, userId} = await this.authService.patientSignin(signinDto);
+        res.cookie('medico_access_token', access_token, {httpOnly: true, secure: true, maxAge: 3600000});
+        res.status(HttpStatus.OK).json({access_token, role, userId});
     }
 
     @HttpCode(HttpStatus.CREATED)
@@ -32,29 +52,13 @@ export class AuthController {
     async patientSignup(@Body() patientSignupDto: PatientSignupDto){
         return this.authService.patientSignup(patientSignupDto);
     }
-
     
     @Post('doctor/signin')
-    async doctorSignin(@Body() signinDto: SigninDto):Promise<{access_token: string}>{  
-        return this.authService.doctorSignin(signinDto);
+    async doctorSignin(@Res() res: Response, @Body() signinDto: SigninDto){  
+        const {access_token, role, userId} = await this.authService.doctorSignin(signinDto);
+        res.cookie('medico_access_token', access_token, {httpOnly: true, secure: true, maxAge: 3600000});
+        res.status(HttpStatus.OK).json({access_token, role, userId});
     }
-
-    // @HttpCode(HttpStatus.OK)
-    // @Post('upload')
-    
-    // async postImage(@UploadedFile() file: Express.Multer.File, @Body() body: any){
-    //     const filePath = file?.path;
-    //     // console.log(user)
-    //     if(filePath){
-
-    //     }
-    //     try {
-    //         const uploadResponse = await this.cloudinaryService.uploadImage(filePath);
-    //         return { success: true, data: uploadResponse.url };
-    //     } catch (error) {
-    //         return { success: false, error: error.message };
-    //     }
-    // }
 
     @HttpCode(HttpStatus.CREATED)
     @Post('doctor/signup')
@@ -70,8 +74,10 @@ export class AuthController {
 
     @HttpCode(HttpStatus.OK)
     @Post('hospital/signin')
-    async hospitalSignin(@Body() signinDto: SigninDto):Promise<{access_token: string}>{
-        return this.authService.hospitalSignin(signinDto);
+    async hospitalSignin(@Res() res: Response, @Body() signinDto: SigninDto){
+        const {access_token, role, userId} = await this.authService.hospitalSignin(signinDto);
+        res.cookie('med_access_token', access_token, {httpOnly: true, secure: true, maxAge: 3600000});
+        res.status(HttpStatus.OK).json({access_token, role, userId});
     }   
 
     @HttpCode(HttpStatus.CREATED)

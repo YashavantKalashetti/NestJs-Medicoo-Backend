@@ -15,9 +15,8 @@ router.patch('/doctors/:id', async (req, res) => {
         availableForConsult,
         availableSlotsByDate
     }
-    
-    await updateDoctorById(id, details);
 
+    await updateDoctorById(id, details);
     await broadcastUpdatedDetails('doctor', details, id);
 
     return res.json({msg: 'Doctor updated'});

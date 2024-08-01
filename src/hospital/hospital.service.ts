@@ -11,6 +11,9 @@ export class HospitalService {
     constructor(private prismaService: PrismaService, private configService: ConfigService) {}
 
     async getMyHospitalDetails(hospitalId: string){
+
+        const {indianTime, startOfToday, endOfToday} = this.IndianTime();
+
         const hospital = await this.prismaService.hospital.findUnique({
             where:{
                 id: hospitalId
@@ -43,18 +46,51 @@ export class HospitalService {
         const todayAppointment = await this.prismaService.appointment.findMany({
             where:{
                 hospitalId: hospitalId,
-                date: new Date()
-            }
-        });
+                date: {
+                    gte: startOfToday,
+                    lt: endOfToday
+                }
+            },
+            include:{
+                doctor:{
+                    select:{
+                        name:true,
+                        contactNumber:true,
+                        specialization:true,
+                    }
+                },
+                patient:{
+                    select:{
+                        name:true,
+                        contactNumber:true,
+                        address:true
+                    }
+                }
+        }});
 
         const previousAppointments = await this.prismaService.appointment.findMany({
             where:{
                 hospitalId: hospitalId,
                 date: {
-                    lt: new Date()
+                    lt: startOfToday
                 }
-            }
-        });
+            },
+            include:{
+                doctor:{
+                    select:{
+                        name:true,
+                        contactNumber:true,
+                        specialization:true,
+                    }
+                },
+                patient:{
+                    select:{
+                        name:true,
+                        contactNumber:true,
+                        address:true
+                    }
+                }
+        }});
         
         const registeredDoctors = hospital.registeredDoctors;
 
@@ -101,7 +137,7 @@ export class HospitalService {
         });
     }
 
-    async getEmergencyAppointments(hospitalId: string) {
+    async getEmergencyAppointments(hospitalId: string) {8
     
         return this.prismaService.appointment.findMany({
             where: {
@@ -133,7 +169,6 @@ export class HospitalService {
             
         });
     }
-    
 
     // Doctor Services
 
@@ -160,6 +195,7 @@ export class HospitalService {
     }
 
     async getDoctor(hospitalId: string, doctorId: string) {
+    
         const doctor = await  this.prismaService.doctor.findUnique({
             where: {
                 id: doctorId,
@@ -468,11 +504,11 @@ export class HospitalService {
     async bookAppointment(hospitalId: string, appointmentDto: CreateAppointmentDto) {
             
         // Confirming ehether doctor is registered with hospital
-        await this.getDoctor(hospitalId, appointmentDto.doctorId);
+        const {doctor} = await this.getDoctor(hospitalId, appointmentDto.doctorId);
 
-        const patient = await this.prismaService.patient.findUnique({
+        let patient = await this.prismaService.patient.findUnique({
             where: {
-                id: appointmentDto.patientId,
+                patient_number: appointmentDto.patientId,
                 hospitalsRegistered:{
                     some:{
                         id: hospitalId
@@ -484,14 +520,25 @@ export class HospitalService {
         if(!patient){
             // Registering patient to hospital if not registered previously
             await this.registerPatientToHospital(hospitalId, appointmentDto.patientId);
+            patient = await this.prismaService.patient.findUnique({
+                where: {
+                    patient_number: appointmentDto.patientId,
+                    hospitalsRegistered:{
+                        some:{
+                            id: hospitalId
+                        }
+                    }
+                }
+            });
         }
 
         const appointment = await this.prismaService.appointment.create({
             data: {
-                patientId: appointmentDto.patientId,
-                hospitalId: hospitalId,
-                ...appointmentDto,
                 date: new Date(appointmentDto.date),
+                reason: appointmentDto.reason,
+                doctorId: doctor.id,
+                patientId: patient.id,
+                hospitalId: hospitalId,
                 mode: AppointmentMode.OFFLINE
             }
         });
@@ -500,7 +547,7 @@ export class HospitalService {
             throw new InternalServerErrorException("Appointment not created");
         }
 
-        return appointment.id;
+        return  { appointmentId: appointment.id, msg: "Appointment Booked" };
         
     }
     
@@ -568,14 +615,14 @@ export class HospitalService {
         }
 
 
-        // await this.prismaService.appointment.update({
-        //     where:{
-        //         id: appointment.id
-        //     },
-        //     data:{
-        //         hospitalId : hospital.id
-        //     }
-        // });
+        await this.prismaService.appointment.update({
+            where:{
+                id: appointment.id
+            },
+            data:{
+                hospitalId : hospital.id
+            }
+        });
 
         const patientParent = await this.prismaService.patient.findFirst({
             where:{
@@ -650,7 +697,7 @@ Medico
         const endOfToday = new Date(indianTime);
         endOfToday.setUTCHours(23, 59, 59, 999);
 
-        return {startOfToday, endOfToday};
+        return {startOfToday, endOfToday, indianTime};
     }
 
     async updateHositalAvailabilityStatusGlobally(hospitalId: string, availableForConsult) {
@@ -665,11 +712,11 @@ Medico
             });
     
             if(!response.ok){
-                console.log(response);
+                // console.log(response);
                 throw new InternalServerErrorException("Hospital Availability Status not updated globally");
             }
         } catch (error) {
-            console.log(error);
+            // console.log(error);
             return { msg: "Hospital Availability Status not updated globally" };
         }
 
