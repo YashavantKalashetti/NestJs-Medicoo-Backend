@@ -19,13 +19,13 @@ import { APP_GUARD } from '@nestjs/core';
 @Module({
   imports: [AuthModule, PrismaModule, PatientModule, DoctorModule, HospitalModule, CommonModuleModule, CpuIntensiveTasksModule,RedisModule,
     ConfigModule.forRoot({isGlobal: true}),
+    EventEmitterModule.forRoot({}),
     BullModule.forRoot({
       redis: {
         host: 'localhost',
         port: 6379,
       },
     }),
-    EventEmitterModule.forRoot({}),
     ThrottlerModule.forRoot([
       {
         name: 'short',

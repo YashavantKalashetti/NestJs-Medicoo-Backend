@@ -41,7 +41,7 @@ export class AuthController {
 
     @HttpCode(HttpStatus.OK)
     @Post('patient/signin')
-    async patientSignin(@Res() res: Response, @Body() signinDto: SigninDto){
+    async patientSignin(@Res() res, @Body() signinDto: SigninDto){
         const {access_token, role, userId} = await this.authService.patientSignin(signinDto);
         res.cookie('medico_access_token', access_token, {httpOnly: true, secure: true, maxAge: 3600000});
         res.status(HttpStatus.OK).json({access_token, role, userId});

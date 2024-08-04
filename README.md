@@ -1,5 +1,10 @@
 # Medicoo
 
+<div align="center" style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+  <img src="uploads/Client_Server.jpg"  />
+</div>
+
+
 ## Introduction
 
 The project is designed to transform how individuals manage their medical information, consult healthcare professionals, and handle emergency situations. It is a comprehensive platform that centralizes medical records, facilitates consultations, and provides critical emergency services.
@@ -61,21 +66,17 @@ This project delivers a comprehensive solution for managing medical information,
 
 ---
 
-<div align="center" style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-  <img src="uploads/Client_Server.jpg"  />
-</div>
-
 #
 
 This project demonstrates the efficient development of a microservice using NestJS and Express.js, leveraging their respective strengths to create a scalable and maintainable application.
 
-## NestJS  <a href="http://nestjs.com/" target="blank"> <img src="https://nestjs.com/img/logo-small.svg" width="35" alt="Nest Logo" /> </a>
+## NestJS
 [NestJS](http://nestjs.com/) was chosen for its robustness in building scalable and maintainable server-side applications. It leverages TypeScript to provide a structured approach to writing Node.js applications, making it ideal for developing the core logic and business rules of our microservice. NestJS offers:
 - **Dependency Injection**: Promotes reusability and testability of components.
 - **Modular Architecture**: Facilitates organized and scalable code structure.
 - **Built-in Support**: Includes support for various protocols and libraries, enhancing development speed and code quality.
 
-## Express.js  <a href="https://nodejs.org/"><img src="https://avatars.githubusercontent.com/u/9950313?s=200&v=4" width="35" alt="Node.js logo"></a>
+## Express.js 
 [Express.js](https://expressjs.com/) complements NestJS by efficiently handling low-level HTTP functionalities and middleware management. Its minimalist and flexible nature allows fine-tuning of our microservice's routing, request handling, and response generation. Integrating Express.js with NestJS ensures seamless compatibility with existing Node.js libraries and frameworks, enabling rapid development of RESTful APIs and microservices components.
 
 ---

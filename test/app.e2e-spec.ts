@@ -15,6 +15,7 @@ import { PrismaModule } from '../src/prisma/prisma.module';
 describe('App e2e', ()=>{
 
   const url = 'http://localhost:3030/api/v1'
+  // const url = 'http://localhost:8080/api/v1'
 
   let app: INestApplication;
 
