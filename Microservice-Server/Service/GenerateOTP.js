@@ -6,6 +6,7 @@ function generateOTP() {
         OTP += digits[Math.floor(Math.random() * 10)];
     }
     return OTP;
+    
 }
 
 module.exports = generateOTP

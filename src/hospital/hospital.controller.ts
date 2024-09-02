@@ -83,6 +83,11 @@ export class HospitalController {
         return this.hospitalService.divergeSingleAppointment(hospitalId, oldDoctorId, newDoctorId, appointmentId);
     }
 
+    @Post('appointDoctorForEmergency')
+    async appointDoctorForEmergency(@GetUser('id') hospitalId: string, @Body() body: {doctorId: string, appointment}){
+        return this.hospitalService.appointDoctorForEmergency(hospitalId, body.doctorId, body.appointment);
+    }
+
     // Patient routes
     @Get('/patients')
     async getPatients(@GetUser('id') hospitalId: string ){

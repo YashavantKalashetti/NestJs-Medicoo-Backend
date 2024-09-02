@@ -118,7 +118,7 @@ export class PatientService {
 
         const importantPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "IMPORTANT");
         const normalPrescriptions = prescriptions.filter(prescription => prescription.prescriptionType === "NORMAL");
-
+        console.log(importantPrescriptions, normalPrescriptions);
         return {importantPrescriptions, normalPrescriptions};
     }
 

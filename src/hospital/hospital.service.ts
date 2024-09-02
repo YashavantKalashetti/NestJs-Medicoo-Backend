@@ -411,6 +411,35 @@ export class HospitalService {
         return {msg: "Appointment Diverged"};
     }
 
+    async appointDoctorForEmergency(hospitalId: string, doctorId: string, appointment) {
+        
+            const emergencyAppointment = await this.prismaService.appointment.findUnique({
+                where:{
+                    id: appointment.id,
+                    patientId:appointment.patientId,
+                    hospitalId: hospitalId,
+                    doctorId: null,
+                    status: "EMERGENCY"
+                },
+            });
+    
+            if(!emergencyAppointment){
+                console.log("no appointment found");
+                throw new BadRequestException("Emergency Appointment is already being handled");
+            }
+    
+            await this.prismaService.appointment.update({
+                where:{
+                    id: emergencyAppointment.id
+                },
+                data:{
+                    doctorId: doctorId
+                }
+            });
+    
+            return {msg: "Doctor Appointed for Emergency"};
+    }
+
     // Patient Services
     async getPatients(hospitalId: string) {
         return this.prismaService.hospital.findUnique({
@@ -592,6 +621,15 @@ export class HospitalService {
         const patient = await this.prismaService.patient.findUnique({
             where:{
                 patient_number
+            },
+            include:{
+                parent:{
+                    select:{
+                        id:true,
+                        name:true,
+                        email:true
+                    }
+                }
             }
         });
 
@@ -624,17 +662,13 @@ export class HospitalService {
             }
         });
 
-        const patientParent = await this.prismaService.patient.findFirst({
-            where:{
-                id: patient.parentId
-            }
-        })
+        
 
-        if (patientParent) {
+        if (patient?.parent && patient?.parent.email) {
             const emailInput = new EmailInputDto();
-            emailInput.email = patientParent.email; 
+            emailInput.email = patient.parent.email; 
             emailInput.subject = '🚨Urgent: Immediate Attention Required for Your Family Member'; 
-            emailInput.message = `Dear ${patientParent.name},
+            emailInput.message = `Dear ${patient.parent.name},
 
 We hope this message finds you well. We are reaching out to inform you of an emergency involving ${patient.name}. The patient has been admitted to ${hospital.name}, and necessary medical actions are being taken. Your immediate attention is kindly requested.
 
@@ -662,7 +696,6 @@ Medico
             EmailService(emailInput);
         }
         
-
 
         return {msg: "Appointment Undertaken Successfully"};
     }

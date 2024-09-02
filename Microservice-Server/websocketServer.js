@@ -139,7 +139,7 @@ async function sendDefaultValues(ws, type, id) {
         defaultDetails = {};
     }
 
-    console.log(`Sending default values for ${type} ${id}`);
+    // console.log(`Sending default values for ${type} ${id}`);
     ws.send(JSON.stringify({ type, details: defaultDetails }));
 }
 

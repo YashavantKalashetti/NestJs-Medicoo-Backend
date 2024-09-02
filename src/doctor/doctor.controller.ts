@@ -1,13 +1,12 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query, UnsupportedMediaTypeException, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
-import { DoctorService } from './doctor.service';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query, UnsupportedMediaTypeException, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { GetUser, Roles } from '../auth/customDecorator';
-import { ROLES } from '../auth/auth.service';
-import { RolesGuard } from '../auth/JwtStrategy';
-import { Doctor } from '@prisma/client';
-import { CreatePrescriptionDto } from '../dto';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService, multerOptions } from 'src/Services';
+import { ROLES } from '../auth/auth.service';
+import { GetUser, Roles } from '../auth/customDecorator';
+import { RolesGuard } from '../auth/JwtStrategy';
+import { CreatePrescriptionDto } from '../dto';
+import { DoctorService } from './doctor.service';
 
 @Roles([ROLES.DOCTOR])
 @UseGuards(AuthGuard('jwt'), RolesGuard)

@@ -1,19 +1,10 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { Doctor, DoctorSpecialization, Hospital, HospitalSpeciality } from '@prisma/client';
-import { UserEntity } from "../dto/UserEntity.dto";
-import { PrismaService } from '../prisma/prisma.service';
-import { Redis } from 'ioredis';
-import { RedisClientType } from 'redis';
-import { RedisProvider } from 'src/redis/redis.provider';
-import exp from 'constants';
-import e, { response } from 'express';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { stat } from 'fs';
-import { Prisma } from '@prisma/client';
+import { DoctorSpecialization, HospitalSpeciality } from '@prisma/client';
+import { RedisProvider } from 'src/redis/redis.provider';
 import { RealTimeNotification } from 'src/Services/RealTimeNotification';
 import { WhatsAppMessage } from 'src/Services/WhatsAppNotification';
-import { generate } from 'rxjs';
-import { generateOTP } from 'src/Services/GenerateOTP';
+import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class CommonModuleService {
     constructor(private prismaService:PrismaService, private readonly redisProvider: RedisProvider, private configService: ConfigService){}
@@ -181,7 +172,7 @@ export class CommonModuleService {
             return {msg : "Hospital is currently offline. But the request is still notified Please try again later"};
         }
 
-        return { msg: "Emergency Consultation Request Sent." }
+        return { msg: "Emergency Consultation Request Sent, hospital have been alerted." }
 
     }
 

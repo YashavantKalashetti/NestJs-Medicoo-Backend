@@ -24,7 +24,9 @@ export class AuthService {
     constructor(private prismaService: PrismaService, private config: ConfigService, private jwt: JwtService){}
 
     async patientSignin(signinDto: SigninDto){
+
         const { email, password} = signinDto;
+
         const user = await this.prismaService.patient.findUnique({
             where:{ email }
         })
@@ -33,7 +35,7 @@ export class AuthService {
             throw new UnauthorizedException('Incorrect credentials');
         }
 
-        if(! argon2.verify(user.password, password)){
+        if(!argon2.verify(user.password, password)){
             throw new UnauthorizedException('Incorrect credentials');
         }
 
@@ -41,6 +43,7 @@ export class AuthService {
 
         // this.setCookie(res, access_token);
         return {access_token, role: ROLES.PATIENT, userId: user.id};
+
     }
 
     async patientSignup(patientSignupDto: PatientSignupDto){

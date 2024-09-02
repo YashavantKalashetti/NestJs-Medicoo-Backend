@@ -1,7 +1,7 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Redirect } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Redirect } from '@nestjs/common';
+import { DoctorSpecialization, HospitalSpeciality } from '@prisma/client';
+import { ValidateEnumPipe } from 'src/auth/customDecorator';
 import { CommonModuleService } from './common-module.service';
-import { DoctorSpecialization, Hospital, HospitalSpeciality } from '@prisma/client';
-import { GetUser, ValidateEnumPipe } from 'src/auth/customDecorator';
 
 @Controller('search')
 export class CommonModuleController {

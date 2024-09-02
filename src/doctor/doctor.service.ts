@@ -198,6 +198,7 @@ export class DoctorService {
                     status: PrescriptionStatus.ACTIVE,
                 },
                 select:{
+                    id: true,
                     patientId: true,
                     prescriptionType: true,
                     status: true,
@@ -205,7 +206,15 @@ export class DoctorService {
                     instructionForOtherDoctor: true,
                     date: true,
                     attachments: true,
-                    medications: true
+                    medications: true,
+                    doctor :{
+                        select:{
+                            name: true,
+                            avatar: true,
+                            specialization: true,
+                            contactNumber: true,
+                        }
+                    }
                 }
             });
         }else{
@@ -216,6 +225,7 @@ export class DoctorService {
                     displayable: true
                 },
                 select:{
+                    id: true,
                     patientId: true,
                     prescriptionType: true,
                     status: true,
@@ -223,7 +233,15 @@ export class DoctorService {
                     instructionForOtherDoctor: true,
                     date: true,
                     attachments: true,
-                    medications: true
+                    medications: true,
+                    doctor :{
+                        select:{
+                            name: true,
+                            avatar: true,
+                            specialization: true,
+                            contactNumber: true,
+                        }
+                    }
                 }
             });
         }
@@ -259,6 +277,7 @@ export class DoctorService {
 
     async getPatientMedicationsById(userId: string, patientId: string) {
 
+        console.log("Hello Doctors")
         
         let prescriptions;
 
