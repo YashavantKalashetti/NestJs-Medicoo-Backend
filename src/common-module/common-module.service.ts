@@ -185,10 +185,10 @@ export class CommonModuleService {
             // console.log("Speciality: ", speciality)
             const cacheKey = specialization ? `doctorsSpeciality-${page}-${specialization}` : 'doctors';
 
-            const cachedData = await this.redisProvider.getClient().get(cacheKey);
-            if(cachedData){
-                return {doctors: JSON.parse(cachedData)};
-            }
+            // const cachedData = await this.redisProvider.getClient().get(cacheKey);
+            // if(cachedData){
+            //     return {doctors: JSON.parse(cachedData)};
+            // }
 
             // console.log("Page: ", currentPage, "Specialization: ", specialization, "PerPage: ", currentPerPage)
 
@@ -233,11 +233,11 @@ export class CommonModuleService {
         const cacheKey = speciality ? `hospitalsSpeciality:${speciality}` : 'hospitals';
 
         // Check if data is cached
-        const cachedData = await this.redisProvider.getClient().get(cacheKey);
-        if (cachedData) {
-            // console.log('Cache Hit');
-            return {hospitals :JSON.parse(cachedData)};
-        }
+        // const cachedData = await this.redisProvider.getClient().get(cacheKey);
+        // if (cachedData) {
+        //     // console.log('Cache Hit');
+        //     return {hospitals :JSON.parse(cachedData)};
+        // }
 
         let hospitals = await this.prismaService.hospital.findMany({
             where:{
@@ -256,7 +256,7 @@ export class CommonModuleService {
 
         // console.log('Cache Miss')
         
-        await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify(hospitals));
+        // await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify(hospitals));
 
         return { hospitals };
     }
@@ -265,10 +265,10 @@ export class CommonModuleService {
         const cacheKey = `doctor:${id}`;
 
         // Check if data is cached
-        const cachedData = await this.redisProvider.getClient().get(cacheKey);
-        if (cachedData) {
-            return JSON.parse(cachedData);
-        }
+        // const cachedData = await this.redisProvider.getClient().get(cacheKey);
+        // if (cachedData) {
+        //     return JSON.parse(cachedData);
+        // }
 
         const doctor = await this.prismaService.doctor.findUnique({
             where: {
@@ -305,7 +305,7 @@ export class CommonModuleService {
             throw new BadRequestException('Doctor not found');
         }
 
-        await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify({doctor,availableSlotsByDate}));
+        // await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify({doctor,availableSlotsByDate}));
 
         return {doctor, availableSlotsByDate};
     }
@@ -315,10 +315,10 @@ export class CommonModuleService {
         const cacheKey = `hospital:${id}`;
 
         // Check if data is cached
-        const cachedData = await this.redisProvider.getClient().get(cacheKey);
-        if (cachedData) {
-            return JSON.parse(cachedData);
-        }
+        // const cachedData = await this.redisProvider.getClient().get(cacheKey);
+        // if (cachedData) {
+        //     return JSON.parse(cachedData);
+        // }
 
         const hospital = await this.prismaService.hospital.findUnique({
             where:{
@@ -348,7 +348,7 @@ export class CommonModuleService {
 
         delete hospital.password;
 
-        await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify({hospital}));
+        // await this.redisProvider.getClient().setEx(cacheKey, 60 * 15, JSON.stringify({hospital}));
 
         return { hospital };
     }

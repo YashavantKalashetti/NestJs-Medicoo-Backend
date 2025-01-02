@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  medico-backend:
+    build: .
+    ports:
+      - '3030:3030'
+    depends_on:
+      - medico-microservice
+    networks:
+      - yashavantk
+  medico-microservice:
+    build: ./medico-microservice
+    ports:
+      - '8080:8080'
+    depends_on:
+    networks:
+      - yashavantk
+networks:
+  yashavantk:
+volumes:
+  data:

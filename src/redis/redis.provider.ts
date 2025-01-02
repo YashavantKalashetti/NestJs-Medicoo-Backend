@@ -10,14 +10,14 @@ export class RedisProvider implements OnModuleInit {
 
   onModuleInit() {
 
-    this.client = createClient({
-      password: this.configService.get<string>('REDIS_CLOUD_PASSWORD'),
-      socket: {
-        host: this.configService.get<string>('REDIS_CLOUD_HOST'),
-        port: this.configService.get<number>('REDIS_CLOUD_PORT'),
-      },
-    });
-    this.connect();
+    // this.client = createClient({
+    //   password: this.configService.get<string>('REDIS_CLOUD_PASSWORD'),
+    //   socket: {
+    //     host: this.configService.get<string>('REDIS_CLOUD_HOST'),
+    //     port: this.configService.get<number>('REDIS_CLOUD_PORT'),
+    //   },
+    // });
+    // this.connect();
   }
 
   private async connect() {
